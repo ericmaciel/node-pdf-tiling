@@ -1,6 +1,6 @@
 var express = require('express'),
-	multer  = require('multer'),
 	fs = require('fs'),
+	multer  = require('multer'),
 	Canvas = require('canvas'),
 	PDFJS = require('./lib/pdf.js'),
 	PDFReader = require('./lib/reader.js').PDFReader
@@ -8,15 +8,22 @@ var express = require('express'),
 PDFJS.disableWorker = true
 
 var app = express()
+
+
 app.use(
 	multer({
 		dest:'./uploads',
+		rename: function(fieldname, fileName){
+			return fileName.replace(/\W+/g, '-').toLowerCase() + '_' + Date.now()
+		},
 		onFileUploadStart: function (file) {
 			console.log(file.originalname + ' is starting ...')
 		},
 		onFileUploadComplete: function (file) {
 			console.log(file.fieldname + ' uploaded to  ' + file.path)
-	}}))
+		}}
+))
+
 
 app.get('/', function (req, res) {
 	res.sendFile(__dirname + '/index.html')
@@ -24,10 +31,14 @@ app.get('/', function (req, res) {
 
 app.post('/upload',function(req,res){
 	var fileName = req.files.file.name
+	var path = req.files.file.path
 	var destFolder = __dirname + '/uploads/' + fileName.substring(0, fileName.indexOf('.pdf'))
+	var savedFile = destFolder+'/'+fileName
 	fs.mkdirSync(destFolder)
 
-	var pdf = new PDFReader(__dirname + '/' + req.files.file.path)
+	fs.renameSync(path, savedFile)
+
+	var pdf = new PDFReader(savedFile)
 	pdf.on('error', errorDumper);
 	pdf.on('ready', function(pdf) {
 		// Render all pages.

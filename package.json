@@ -23,7 +23,6 @@
   },
   "dependencies": {
     "express": "~4.11.1",
-    "multer": "~0.1.7",
     "canvas": "~1.1.6"
   }
 }
