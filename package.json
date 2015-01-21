@@ -1,0 +1,28 @@
+{
+  "name": "node-pdf-tiling",
+  "version": "0.0.0",
+  "description": "Pdf to picture tiling",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ericmaciel/node-pdf-tiling.git"
+  },
+  "keywords": [
+    "nodejs",
+    "pdf",
+    "picture",
+    "tiling"
+  ],
+  "author": "",
+  "license": "GNU",
+  "bugs": {
+    "url": "https://github.com/ericmaciel/node-pdf-tiling/issues"
+  },
+  "dependencies": {
+    "express": "~4.11.1",
+    "multer": "~0.1.7"
+  }
+}
