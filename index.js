@@ -58,13 +58,23 @@ app.post('/upload',function(req,res){
 
 
 				var zoom75 = pageFolder + '/page1_75.png'
-				copyFile(pageOriginal, zoom75, function(err){
-					if(err){
-						console.log('Error copying file')
-						throw err;
-					}
-					gm(zoom75).resize(75, '%')
+				gm(pageOriginal).resize(75,75,'%').write(zoom75, function(err){
+					if (err) return console.dir(arguments)
+    				console.log(this.outname + " created  ::  " + arguments[3])
 				})
+
+				var zoom50 = pageFolder + '/page1_50.png'
+				gm(pageOriginal).resize(50,50,'%').write(zoom50, function(err){
+					if (err) return console.dir(arguments)
+    				console.log(this.outname + " created  ::  " + arguments[3])
+				})
+
+				var zoom25 = pageFolder + '/page1_25.png'
+				gm(pageOriginal).resize(25,25,'%').write(zoom25, function(err){
+					if (err) return console.dir(arguments)
+    				console.log(this.outname + " created  ::  " + arguments[3])
+				})
+				
 				console.log('Finished page['+pageNum+']')
 
 			}, errorDumper)
