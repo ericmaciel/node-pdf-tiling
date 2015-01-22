@@ -29,6 +29,43 @@ app.get('/', function (req, res) {
 	res.sendFile(__dirname + '/index.html')
 })
 
+//Get all filenames available
+app.get('/files', function(req, res){
+	var files = fs.readdirSync(__dirname + '/uploads/')
+	res.status(200).send(files)
+})
+
+//Get pdf
+app.get('/files/:id?', function(req, res){
+	var filename = req.params.id
+	var path = __dirname+'/uploads/'+filename
+	fs.exists(path, function(exists){
+		if(exists){
+			res.sendFile(__dirname+'/uploads/'+filename+'/'+filename+'.pdf')
+		}else{
+			res.send('file['+filename+'] doesnt exists')
+		}
+	})
+})
+
+//Get page picture file
+app.get('/files/:id/:page?', function(req, res){
+	var filename = req.params.id,
+		page = req.params.page,
+		zoom = req.query.zoom,
+		row = req.query.row,
+		col = req.query.col
+
+	var path =  __dirname+'/uploads/'+filename+'/page_'+page+'/'+'page'+page+'.png'
+	fs.exists(path, function(exists){
+		if(exists){
+			res.sendFile(path)
+		}else{
+			res.send('file['+filename+'] doesnt exists')
+		}
+	})
+})
+
 app.post('/upload',function(req,res){
 	var fileName = req.files.file.name
 	var path = req.files.file.path
@@ -74,7 +111,7 @@ app.post('/upload',function(req,res){
 					if (err) return console.dir(arguments)
     				console.log(this.outname + " created  ::  " + arguments[3])
 				})
-				
+
 				console.log('Finished page['+pageNum+']')
 
 			}, errorDumper)
