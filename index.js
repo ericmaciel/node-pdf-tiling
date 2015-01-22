@@ -94,19 +94,19 @@ app.post('/upload',function(req,res){
 				fs.renameSync(destFolder + '/' + pageFile, pageOriginal)
 
 
-				var zoom75 = pageFolder + '/page1_75.png'
+				var zoom75 = pageFolder + '/page_'+pageNum+'_75.png'
 				gm(pageOriginal).resize(75,75,'%').write(zoom75, function(err){
 					if (err) return console.dir(arguments)
     				console.log(this.outname + " created  ::  " + arguments[3])
 				})
 
-				var zoom50 = pageFolder + '/page1_50.png'
+				var zoom50 = pageFolder + '/page_'+pageNum+'_50.png'
 				gm(pageOriginal).resize(50,50,'%').write(zoom50, function(err){
 					if (err) return console.dir(arguments)
     				console.log(this.outname + " created  ::  " + arguments[3])
 				})
 
-				var zoom25 = pageFolder + '/page1_25.png'
+				var zoom25 = pageFolder + '/page_'+pageNum+'_25.png'
 				gm(pageOriginal).resize(25,25,'%').write(zoom25, function(err){
 					if (err) return console.dir(arguments)
     				console.log(this.outname + " created  ::  " + arguments[3])
