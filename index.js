@@ -14,7 +14,7 @@ app.use(
 		multer({
 		dest:'./uploads',
 		rename: function(fieldname, fileName){
-			return fileName.replace(/\W+/g, '-').toLowerCase() + '_' + Date.now()
+			return Date.now()
 		},
 		onFileUploadStart: function (file) {
 			console.log(file.originalname + ' is starting ...')
@@ -24,6 +24,11 @@ app.use(
 		}}
 ))
 
+var server = app.listen(3000, function () {
+  var host = server.address().address
+  var port = server.address().port
+  console.log('Example app listening at http://%s:%s', host, port)
+})
 
 app.get('/', function (req, res) {
 	res.sendFile(__dirname + '/index.html')
@@ -52,9 +57,9 @@ app.get('/files/:id?', function(req, res){
 app.get('/files/:id/:page?', function(req, res){
 	var filename = req.params.id,
 		page = req.params.page,
-		zoom = req.query.zoom,
-		row = req.query.row,
-		col = req.query.col
+		zoom = req.query.zoom || 100,
+		row = req.query.row || 0,
+		col = req.query.col || 0
 
 	var path =  __dirname+'/uploads/'+filename+'/page_'+page+'/'+'zoom_'+zoom+'/tile_'+row+'_'+col+'.png'
 	fs.exists(path, function(exists){
@@ -67,103 +72,76 @@ app.get('/files/:id/:page?', function(req, res){
 })
 
 app.post('/upload',function(req,res){
-	var fileName = req.files.file.name
-	var path = req.files.file.path
-	var destFolder = __dirname + '/uploads/' + fileName.substring(0, fileName.indexOf('.pdf'))
-	var savedFile = destFolder+'/'+fileName
-	fs.mkdirSync(destFolder)
-	fs.renameSync(path, savedFile)
-	res.end('File uploaded and converted')
+	var filename = req.files.file.name,
+		path = req.files.file.path,
+		dest = __dirname + '/uploads/' + filename.substring(0, filename.indexOf('.pdf')),
+		moved = dest+'/'+filename
 
-	var pdf = new PDFReader(savedFile)
-	pdf.on('error', errorDumper);
+	fs.mkdirSync(dest)
+	fs.renameSync(path, moved)
+
+	res.send('File uploaded successfully')
+
+	var pdf = new PDFReader(moved)
+	pdf.on('error', errorCallback);
 	pdf.on('ready', function(pdf) {
 		// Render all pages.
 		pdf.renderAll({
-			scale: 4, //TODO work on that number
 			bg: true,
+			scaleBounds: [3000, 3000],
 			output: function(pageNum) {
-				return destFolder + '/page' + pageNum + '.png'
+				var path = getPagePictureFolderPath(dest, pageNum)
+				fs.mkdirSync(path)
+				return path + '/page' + pageNum + '.png'
 			}
 			}, function(pageNum){
+				var zooms = [100,75,50,25]
 
-				var pageFolder = destFolder + '/page_' + pageNum
-				var pageFile = 'page' + pageNum + '.png';
-				var pageOriginal = pageFolder + '/' + pageFile
-				fs.mkdirSync(pageFolder)
-				fs.renameSync(destFolder + '/' + pageFile, pageOriginal)
-
-
-				resizePage(destFolder, pageFolder, pageOriginal, 75, function(zoomFolder, zoomFile, err){
-					if(err)
-						throw err
-
-					crop(zoomFolder, zoomFile, function(err){
-						if(err)
-							throw err
-						console.log('Finished croping page zoom 75 file')
-					})
-				})
-				//Need to wait to do the other zoom levels otherwise it's going to fail
-				console.log('Finished page['+pageNum+']')
-			}, errorDumper)
+				var buf = fs.readFileSync(getPagePictureFolderPath(dest, pageNum) + '/page' + pageNum + '.png')
+				for(var i=0;i<zooms.length;i++){
+					resizeAndCrop(buf, dest, pageNum, zooms[i])
+				}
+			}, errorCallback)
 	});
 });
 
-function errorDumper(err) {
+function errorCallback(err) {
 	if (err) {
 		console.log('something went wrong :/')
 		throw err
 	}
 }
 
-var server = app.listen(3000, function () {
-  var host = server.address().address
-  var port = server.address().port
-  console.log('Example app listening at http://%s:%s', host, port)
-})
+function getPagePictureFolderPath(path, pageNum){
+	return path + '/page_' + pageNum
+}
 
-function resizePage(floorPlanFolder, pageFolder, pageFile, zoom, cb){
-	var zoomFolder = pageFolder + '/zoom_' + zoom
-	var zoomPath = zoomFolder + '/original'
-	fs.mkdirSync(zoomFolder)
-	console.log(floorPlanFolder)
-	console.log(pageFolder)
-	console.log(pageFile)
-	gm(pageFile).resize(zoom,zoom,'%').write(zoomPath, function(err){
-		if (err) {
-			console.log('Error resizing page['+pageFile+']')
-			cb(err)
-		}else{
-			cb(zoomFolder, zoomPath)			
-		}
+function resizeAndCrop(buf, dest, pageNum, zoom){
+	var folder = getPagePictureFolderPath(dest, pageNum) + '/zoom_' + zoom
+	var resized = folder + '/resize.png'
+	fs.mkdirSync(folder)
+	gm(buf).resize(zoom, zoom, '%').write(resized, function(err){
+		if(err)throw err
+		crop(folder, resized)
 	})
 }
 
-function crop(zoomFolder, zoom, cb){
-	gm(zoom).size(function(err, value){
-		if(err){
-			console.log('Error croping file['+zoom+']')
-			cb(err)
-		}
+function crop(zoomFolder, resized){
+	gm(resized).size(function(err, value){
+		if(err)throw err
 
 		var rows = Math.ceil(value.height / 256)
 		var columns = Math.ceil(value.width / 256)
-
-		console.log(value)
-		console.log('Rows['+rows+'] columns['+columns+']')
 		var px=0,py=0
 		for(var i=0;i<rows;i++){
 			for(var j=0;j<columns;j++){
-				gm(zoom).crop(256,256, px, py).write(zoomFolder+'/tile_'+i+'_'+j+'.png', function(err){
+				gm(resized).crop(256,256, px, py).write(zoomFolder+'/tile_'+i+'_'+j+'.png', function(err){
 					if (err) return console.dir(arguments)
-					console.log(this.outname + " created  ::  " + arguments[3])
 				})
 				px+=256
 			}
 			px=0
 			py+=256
 		}
-		cb()
 	})
 }
