@@ -97,10 +97,34 @@ app.post('/upload',function(req,res){
 				var zoom75 = pageFolder + '/page_'+pageNum+'_75.png'
 				gm(pageOriginal).resize(75,75,'%').write(zoom75, function(err){
 					if (err) return console.dir(arguments)
-    				console.log(this.outname + " created  ::  " + arguments[3])
+  				console.log(this.outname + " created  ::  " + arguments[3])
+
+  				gm(zoom75).size(function(err, value){
+  					if(err)
+  						throw err
+  					var rows = Math.ceil(value.height / 256)
+  					var columns = Math.ceil(value.width / 256)
+
+						console.log(value)
+  					console.log('Rows['+rows+'] columns['+columns+']')
+  					var px=0,py=0
+  					for(var i=0;i<rows;i++){
+  						for(var j=0;j<columns;j++){
+  							gm(zoom75).crop(256,256, py, px).write(pageFolder+'/zoom75_'+i+'_'+j+'.png', function(err){
+  								if (err) return console.dir(arguments)
+    							console.log(this.outname + " created  ::  " + arguments[3])
+  							})
+  							py+=256
+  						}
+  						py=0
+  						px+=256
+  					}
+  					
+  				})
+
 				})
 
-				var zoom50 = pageFolder + '/page_'+pageNum+'_50.png'
+				/*var zoom50 = pageFolder + '/page_'+pageNum+'_50.png'
 				gm(pageOriginal).resize(50,50,'%').write(zoom50, function(err){
 					if (err) return console.dir(arguments)
     				console.log(this.outname + " created  ::  " + arguments[3])
@@ -110,7 +134,7 @@ app.post('/upload',function(req,res){
 				gm(pageOriginal).resize(25,25,'%').write(zoom25, function(err){
 					if (err) return console.dir(arguments)
     				console.log(this.outname + " created  ::  " + arguments[3])
-				})
+				})*/
 
 				console.log('Finished page['+pageNum+']')
 
