@@ -56,7 +56,7 @@ app.get('/files/:id/:page?', function(req, res){
 		row = req.query.row,
 		col = req.query.col
 
-	var path =  __dirname+'/uploads/'+filename+'/page_'+page+'/'+'page'+page+'.png'
+	var path =  __dirname+'/uploads/'+filename+'/page_'+page+'/'+'zoom_'+zoom+'/tile_'+row+'_'+col+'.png'
 	fs.exists(path, function(exists){
 		if(exists){
 			res.sendFile(path)
@@ -101,24 +101,11 @@ app.post('/upload',function(req,res){
 					crop(zoomFolder, zoomFile, function(err){
 						if(err)
 							throw err
-						console.log('Finished croping page file')
+						console.log('Finished croping page zoom 75 file')
 					})
 				})
-
-				/*var zoom50 = pageFolder + '/page_'+pageNum+'_50.png'
-				gm(pageOriginal).resize(50,50,'%').write(zoom50, function(err){
-					if (err) return console.dir(arguments)
-    				console.log(this.outname + " created  ::  " + arguments[3])
-				})
-
-				var zoom25 = pageFolder + '/page_'+pageNum+'_25.png'
-				gm(pageOriginal).resize(25,25,'%').write(zoom25, function(err){
-					if (err) return console.dir(arguments)
-    				console.log(this.outname + " created  ::  " + arguments[3])
-				})*/
-
+				//Need to wait to do the other zoom levels otherwise it's going to fail
 				console.log('Finished page['+pageNum+']')
-
 			}, errorDumper)
 	});
 });
@@ -130,46 +117,11 @@ function errorDumper(err) {
 	}
 }
 
-function renderCallback(page){
-	console.log('Finished page['+page+']')
-	//fs.mkdirSync(destFolder)
-
-	//TODO
-	//create page folder
-	//Resize page file into levels zoom
-	//Split each zoom level into tiles
-}
-
 var server = app.listen(3000, function () {
   var host = server.address().address
   var port = server.address().port
   console.log('Example app listening at http://%s:%s', host, port)
 })
-
-
-function copyFile(source, target, cb) {
-  var cbCalled = false;
-
-  var rd = fs.createReadStream(source);
-  rd.on("error", function(err) {
-    done(err);
-  });
-  var wr = fs.createWriteStream(target);
-  wr.on("error", function(err) {
-    done(err);
-  });
-  wr.on("close", function(ex) {
-    done();
-  });
-  rd.pipe(wr);
-
-  function done(err) {
-    if (!cbCalled) {
-      cb(err);
-      cbCalled = true;
-    }
-  }
-}
 
 function resizePage(floorPlanFolder, pageFolder, pageFile, zoom, cb){
 	var zoomFolder = pageFolder + '/zoom_' + zoom
