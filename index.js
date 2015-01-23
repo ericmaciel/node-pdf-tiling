@@ -94,34 +94,15 @@ app.post('/upload',function(req,res){
 				fs.renameSync(destFolder + '/' + pageFile, pageOriginal)
 
 
-				var zoom75 = pageFolder + '/page_'+pageNum+'_75.png'
-				gm(pageOriginal).resize(75,75,'%').write(zoom75, function(err){
-					if (err) return console.dir(arguments)
-  				console.log(this.outname + " created  ::  " + arguments[3])
+				resizePage(destFolder, pageFolder, pageOriginal, 75, function(zoomFolder, zoomFile, err){
+					if(err)
+						throw err
 
-  				gm(zoom75).size(function(err, value){
-  					if(err)
-  						throw err
-  					var rows = Math.ceil(value.height / 256)
-  					var columns = Math.ceil(value.width / 256)
-
-						console.log(value)
-  					console.log('Rows['+rows+'] columns['+columns+']')
-  					var px=0,py=0
-  					for(var i=0;i<rows;i++){
-  						for(var j=0;j<columns;j++){
-  							gm(zoom75).crop(256,256, py, px).write(pageFolder+'/zoom75_'+i+'_'+j+'.png', function(err){
-  								if (err) return console.dir(arguments)
-    							console.log(this.outname + " created  ::  " + arguments[3])
-  							})
-  							py+=256
-  						}
-  						py=0
-  						px+=256
-  					}
-  					
-  				})
-
+					crop(zoomFolder, zoomFile, function(err){
+						if(err)
+							throw err
+						console.log('Finished croping page file')
+					})
 				})
 
 				/*var zoom50 = pageFolder + '/page_'+pageNum+'_50.png'
@@ -188,4 +169,49 @@ function copyFile(source, target, cb) {
       cbCalled = true;
     }
   }
+}
+
+function resizePage(floorPlanFolder, pageFolder, pageFile, zoom, cb){
+	var zoomFolder = pageFolder + '/zoom_' + zoom
+	var zoomPath = zoomFolder + '/original'
+	fs.mkdirSync(zoomFolder)
+	console.log(floorPlanFolder)
+	console.log(pageFolder)
+	console.log(pageFile)
+	gm(pageFile).resize(zoom,zoom,'%').write(zoomPath, function(err){
+		if (err) {
+			console.log('Error resizing page['+pageFile+']')
+			cb(err)
+		}else{
+			cb(zoomFolder, zoomPath)			
+		}
+	})
+}
+
+function crop(zoomFolder, zoom, cb){
+	gm(zoom).size(function(err, value){
+		if(err){
+			console.log('Error croping file['+zoom+']')
+			cb(err)
+		}
+
+		var rows = Math.ceil(value.height / 256)
+		var columns = Math.ceil(value.width / 256)
+
+		console.log(value)
+		console.log('Rows['+rows+'] columns['+columns+']')
+		var px=0,py=0
+		for(var i=0;i<rows;i++){
+			for(var j=0;j<columns;j++){
+				gm(zoom).crop(256,256, px, py).write(zoomFolder+'/tile_'+i+'_'+j+'.png', function(err){
+					if (err) return console.dir(arguments)
+					console.log(this.outname + " created  ::  " + arguments[3])
+				})
+				px+=256
+			}
+			px=0
+			py+=256
+		}
+		cb()
+	})
 }
