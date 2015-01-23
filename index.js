@@ -71,6 +71,27 @@ app.get('/files/:id/:page?', function(req, res){
 	})
 })
 
+//Get zoom info
+app.get('/files/:id/:page/:zoom/info', function(req, res){
+	var file = req.params.id,
+		page = req.params.page,
+		zoom = req.params.zoom
+
+	var path = __dirname + '/uploads/' + file + '/page_' + page + '/zoom_' + zoom + '/resize.png'
+	fs.exists(path, function(exists){
+		if(exists){
+			gm(path).size(function(err, value){
+				if(err)
+					res.send('Unable to find file['+file+'], page['+page+'], zoom['+zoom+'] info')
+
+				res.send(value)
+			})
+		}else{
+			res.send('Unable to find file['+file+'], page['+page+'], zoom['+zoom+'] info')
+		}
+	})
+})
+
 app.post('/upload',function(req,res){
 	var filename = req.files.file.name,
 		path = req.files.file.path,
