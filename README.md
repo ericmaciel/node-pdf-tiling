@@ -16,7 +16,11 @@ Retrieve tile from file id and page [page] in zoom [zoom] row and col. Each tile
 
 ```GET /files/:id/:page/info```
 
-Retrieve page resolution (width and height)
+Retrieve page resolution (width and height) ```{"width": 750,"height": 580}```
+
+```GET /files/:id/pages```
+
+Retrieve count of pages of pdf ```{"numPages": 1}```
 
 ### Setup
 =============

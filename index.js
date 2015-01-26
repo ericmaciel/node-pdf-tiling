@@ -46,7 +46,26 @@ app.get('/files/:id?', function(req, res){
 	var path = __dirname+'/uploads/'+filename
 	fs.exists(path, function(exists){
 		if(exists){
-			res.sendFile(__dirname+'/uploads/'+filename+'/'+filename+'.pdf')
+			res.sendFile(path+'/'+filename+'.pdf')
+		}else{
+			res.send('file['+filename+'] doesnt exists')
+		}
+	})
+})
+
+//Get pdf pageNum
+app.get('/files/:id/pages', function(req, res){
+	var filename = req.params.id
+	var path = __dirname+'/uploads/'+filename
+	fs.exists(path, function(exists){
+		if(exists){
+			var pdf = new PDFReader(path+'/'+filename+'.pdf')
+			pdf.on('error', function(err){
+				res.send(err)
+			})
+			pdf.on('ready', function(pdf){
+				res.status(200).send({numPages:pdf.pdf.pdfInfo.numPages})
+			})
 		}else{
 			res.send('file['+filename+'] doesnt exists')
 		}
