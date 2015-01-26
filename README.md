@@ -21,7 +21,8 @@ Retrieve page resolution (width and height)
 ### Setup
 =============
 __1.__ Install [node-canvas](https://github.com/Automattic/node-canvas), [choose your OS instalation](https://github.com/Automattic/node-canvas/wiki/_pages)
-__1.__ Install install [GraphicsMagick](http://www.graphicsmagick.org/) or [ImageMagick](http://www.imagemagick.org/)
+
+__2.__ Install install [GraphicsMagick](http://www.graphicsmagick.org/) or [ImageMagick](http://www.imagemagick.org/)
 
 ### References
 =============
