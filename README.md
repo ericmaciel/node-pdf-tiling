@@ -36,3 +36,7 @@ __1.__ Install install [GraphicsMagick](http://www.graphicsmagick.org/) or [Imag
 [Render PDFs on the Server with PDF.JS and Node-Canvas](http://baudehlo.com/2013/02/21/render-pdfs-on-the-server-with-pdf-js-and-node-canvas/)
 
 [gm](https://github.com/aheckmann/gm)
+
+### Mobile
+=============
+[Android](https://github.com/bnsantos/android-tiling-example)
