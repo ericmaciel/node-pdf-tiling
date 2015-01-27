@@ -1,8 +1,8 @@
 var bramqp = require('bramqp'),
 		net = require('net'),
 		async = require('async'),
-		socket = net.connect({ port : 5672 }),
-		config = require('./config.js')
+		config = require('./config.js'),
+		socket = net.connect(config.connection)
 
 module.exports = new function(){
 	var handle
@@ -45,7 +45,7 @@ module.exports = new function(){
 		])
 	}
 
-	this.queue = function(tasks){
+	this.queueResizes = function(tasks){
 		var functions = []
 		for(var i=0;i<tasks.length;i++){
 			functions.push(this.generatePublishFunction(tasks[i]))

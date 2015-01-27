@@ -21,10 +21,10 @@ exports.render = function(path, file, sendAck){
 				console.log('Finished rendering page ' + pageNum)
 				var p = getPagePictureFolderPath(path, pageNum)
 				var fullPath = p + '/page' + pageNum + '.png'
-				queueClient.test([{type:'resize', path: p, original: fullPath, zoom:100}, 
-													{type:'resize', path: p, original: fullPath, zoom:75}, 
-													{type:'resize', path: p, original: fullPath, zoom:50}, 
-													{type:'resize', path: p, original: fullPath, zoom:25}])
+				queueClient.queueResizes([{type:'resize', path: p, original: fullPath, zoom:100}, 
+																{type:'resize', path: p, original: fullPath, zoom:75}, 
+																{type:'resize', path: p, original: fullPath, zoom:50}, 
+																{type:'resize', path: p, original: fullPath, zoom:25}])
 
 				if(pageNum==pdf.pdf.pdfInfo.numPages){
 					sendAck()

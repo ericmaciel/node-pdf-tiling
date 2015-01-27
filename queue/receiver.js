@@ -2,7 +2,7 @@
 		net = require('net'),
 		async = require('async'),
 		config = require('./config.js'),
-		socket = net.connect({ port : 5672 }),
+		socket = net.connect(config.connection)
 		render = require('../render.js'),
 		imageUtils = require('../image-utils.js')
 
