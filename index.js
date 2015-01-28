@@ -107,7 +107,7 @@ app.post('/upload?',function(req,res){
 		path = req.files.file.path,
 		dest = __dirname + '/uploads/' + filename.substring(0, filename.indexOf('.pdf')),
 		moved = dest+'/'+filename,
-		mode = req.params.mode || 'pdf'
+		mode = req.params.mode || 'gs'
 
 	fs.mkdirSync(dest)
 	fs.renameSync(path, moved)
