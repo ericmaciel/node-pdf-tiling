@@ -123,6 +123,10 @@ app.post('/uploadGS',function(req,res){
 	upload('gs', req, res)
 });
 
+app.post('/uploadGSCommandLine',function(req,res){
+	upload('gs-cl', req, res)
+});
+
 
 function upload(mode, req, res){
 	var filename = req.files.file.name,

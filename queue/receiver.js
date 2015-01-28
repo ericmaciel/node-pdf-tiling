@@ -40,16 +40,25 @@ bramqp.initialize(socket, 'rabbitmq/full/amqp0-9-1.stripped.extended', function(
           	
           	if(task.type=='render'){
 	          	render.render(task.mode, task.path, task.file, generateAckFunction('RENDER', data))	
+          	//PDF
           	}else if(task.type=='resize'){
           		imageUtils.resize(task.path, task.original, task.zoom, generateAckFunction('RESIZE', data))
           	}else if(task.type=='crop'){
         			imageUtils.crop(task.path, task.resized, generateAckFunction('CROP', data))
+          	//GS
           	}else if(task.type=='move'){
           		imageUtils.movePictures(task.dest, task.pageNames, generateAckFunction('MOVE', data))
           	}else if(task.type=='resizeGS'){
-          		imageUtils.rezieGS(task.pageDir, task.pageFile, task.pageName, task.zoom, generateAckFunction('RESIZE', data))
+          		imageUtils.resizeGS(task.pageDir, task.pageFile, task.pageName, task.zoom, generateAckFunction('RESIZE', data))
           	}else if(task.type=='cropGS'){
           		imageUtils.cropGS(task.zoomedPath, task.zoomedFile, task.zoomedPageName, generateAckFunction('CROP', data))
+          	//Command line
+          	}else if(task.type=='move-cl'){
+          		imageUtils.movePicturesCL(task.dest, task.pageNames, generateAckFunction('MOVE', data))
+          	}else if(task.type=='resizeGS-cl'){
+          		imageUtils.resizeGLCL(task.pageDir, task.pageFile, task.pageName, task.zoom, generateAckFunction('RESIZE', data))
+          	}else if(task.type=='cropGS-cl'){
+          		imageUtils.cropGSCL(task.zoomedPath, task.zoomedFile, task.zoomedPageName, generateAckFunction('CROP', data))
           	}else{
           		logger.warn('Error unkown type['+task.type+']', logSource)
           		handle.basic.ack(1, data['delivery-tag'])

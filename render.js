@@ -5,13 +5,16 @@ var	Canvas = require('canvas'),
 	queueClient = require('./queue/client.js'),
 	gs = require("ghostscript"),
 	logger = require('./logger.js'),
-	logSource = { source: 'render' }
+	logSource = { source: 'render' },
+	exec = require('child_process').exec
 
 exports.render = function(mode, path, file, sendAck){
 	if(mode=='pdf'){
 		renderPDF(path, file, sendAck)
 	}else if(mode=='gs'){
 		renderGS(path, file, sendAck)
+	}else if(mode=='gs-cl'){
+		renderGS_CL(path, file, sendAck)
 	}else{
 		logger.warn('undefined mode', logSource)
 		sendAck()
@@ -88,4 +91,27 @@ function renderGS(path, file, sendAck){
 			}
 			sendAck() //Send ack only when ok?
 		})
+}
+
+function renderGS_CL(path, file, sendAck){
+	var command = 'gs -dNumRenderingThreads=4 -dNOPAUSE -sDEVICE=png16m -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -sOutputFile='+path+'/page_%d.png -r144 -q '+path+'/'+file+' -c quit'
+	logger.info(command, logSource)
+	exec(command, function(error, stdout, stderr){
+		if(error){
+			logger.error(error, logSource)
+			logger.error(stderr, logSource)
+			throw error
+		}else{
+			logger.info('Finished rendering file['+file+']')
+
+			var pageNames = fs.readdirSync(path).filter(function(file) {
+					return (file.indexOf('.png') != -1)
+				}).map(function(file) {
+					return file.substring(0, file.lastIndexOf('.png'))
+				})
+			queueClient.queue({type:'move-cl', dest: path, pageNames:pageNames})
+		}
+		sendAck()
+
+	})
 }
