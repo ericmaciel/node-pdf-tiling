@@ -4,7 +4,8 @@ var express = require('express'),
 	Canvas = require('canvas'),
 	PDFJS = require('./lib/pdf.js'),
 	PDFReader = require('./lib/reader.js').PDFReader,
-	gm = require('gm')
+	gm = require('gm'),
+	queueClient = require('./queue/client.js')
 
 PDFJS.disableWorker = true
 
@@ -64,7 +65,7 @@ app.get('/files/:id/pages', function(req, res){
 				res.send(err)
 			})
 			pdf.on('ready', function(pdf){
-				res.status(200).send({numPages:pdf.pdf.pdfInfo.numPages})
+				res.send({numPages:pdf.pdf.pdfInfo.numPages})
 			})
 		}else{
 			res.send('file['+filename+'] doesnt exists')
@@ -122,66 +123,5 @@ app.post('/upload',function(req,res){
 
 	res.send('File uploaded successfully')
 
-	var pdf = new PDFReader(moved)
-	pdf.on('error', errorCallback);
-	pdf.on('ready', function(pdf) {
-		// Render all pages.
-		pdf.renderAll({
-			bg: true,
-			scaleBounds: [3000, 3000],
-			output: function(pageNum) {
-				var path = getPagePictureFolderPath(dest, pageNum)
-				fs.mkdirSync(path)
-				return path + '/page' + pageNum + '.png'
-			}
-			}, function(pageNum){
-				var zooms = [100,75,50,25]
-
-				var buf = fs.readFileSync(getPagePictureFolderPath(dest, pageNum) + '/page' + pageNum + '.png')
-				for(var i=0;i<zooms.length;i++){
-					resizeAndCrop(buf, dest, pageNum, zooms[i])
-				}
-			}, errorCallback)
-	});
+	queueClient.queue({type: 'render', path:dest, file:filename})
 });
-
-function errorCallback(err) {
-	if (err) {
-		console.log('something went wrong :/')
-		throw err
-	}
-}
-
-function getPagePictureFolderPath(path, pageNum){
-	return path + '/page_' + pageNum
-}
-
-function resizeAndCrop(buf, dest, pageNum, zoom){
-	var folder = getPagePictureFolderPath(dest, pageNum) + '/zoom_' + zoom
-	var resized = folder + '/resize.png'
-	fs.mkdirSync(folder)
-	gm(buf).resize(zoom, zoom, '%').write(resized, function(err){
-		if(err)throw err
-		crop(folder, resized)
-	})
-}
-
-function crop(zoomFolder, resized){
-	gm(resized).size(function(err, value){
-		if(err)throw err
-
-		var rows = Math.ceil(value.height / 256)
-		var columns = Math.ceil(value.width / 256)
-		var px=0,py=0
-		for(var i=0;i<rows;i++){
-			for(var j=0;j<columns;j++){
-				gm(resized).crop(256,256, px, py).write(zoomFolder+'/tile_'+i+'_'+j+'.png', function(err){
-					if (err) return console.dir(arguments)
-				})
-				px+=256
-			}
-			px=0
-			py+=256
-		}
-	})
-}
