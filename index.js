@@ -2,7 +2,8 @@ var express = require('express'),
 	multer  = require('multer'),
 	fs = require('fs'),
 	gs = require("ghostscript"),
-	gm = require('gm')
+	gm = require('gm'),
+	exec = require('child_process').exec
 
 var app = express()
 
@@ -120,7 +121,7 @@ app.post('/upload',function(req,res){
 		.device('png16m')
 		.textalphabits(4)
 		.graphicsalphabits(4)
-		.resolution(72)
+		.resolution(144)
 		.input(moved)
 		.output(dest+'/page%d.png')
 		.exec(function(err, stdout, stderr) {
@@ -160,37 +161,58 @@ function zoomAndTilePage(pageDir, pageFile, pageName, zoomLevel) {
 		zoomedPath = pageDir + '/' + zoomedPageName,
 		zoomedFile = zoomedPath + '/' + zoomedPageName + '.png'
 	fs.mkdirSync(zoomedPath)
-	gm(pageFile)
-		.options({imageMagick: true})
-		.resize(percent, percent, '%')
-		.write(zoomedFile, function(err) {
-			if (err) throw err
+
+	exec('convert ' + pageFile + ' -resize ' + percent + '% ' + zoomedFile, function (error, stdout, stderr) {
+		if (error) {
+			console.log(error);
+		}
+		else {
+			console.log('page ' + pageName + ' zoomed');
 			tileZoomedPage(zoomedPath, zoomedFile, zoomedPageName)
-		})
+		}
+	});
+
+	// gm(pageFile)
+	// 	.options({imageMagick: true})
+	// 	.resize(percent, percent, '%')
+	// 	.write(zoomedFile, function(err) {
+	// 		if (err) throw err
+	// 		tileZoomedPage(zoomedPath, zoomedFile, zoomedPageName)
+	// 	})
 }
 
 function tileZoomedPage(zoomedPath, zoomedFile, zoomedPageName) {
-	gm(zoomedFile)
-		.options({imageMagick: true})
-		.size(function(err, size) {
-			if (err) throw err
 
-			var tileSize = 256
-			var rows = Math.ceil(size.height / tileSize)
-			var cols = Math.ceil(size.width / tileSize)
-			var px = 0, py = 0
-			for(var i = 0; i < rows; i++){
-				for(var j = 0; j < cols; j++){
-					gm(zoomedFile)
-						.options({imageMagick: true})
-						.crop(tileSize, tileSize, px, py)
-						.write(zoomedPath + '/' + zoomedPageName + '_' + i + '_' + j + '.png', function(err){
-							if (err) throw err
-						})
-					px += tileSize
-				}
-				px = 0
-				py += tileSize
-			}
-		})
+	exec('convert ' + zoomedFile + ' -crop 256x256 -set filename:tile "%[fx:page.y/256]_%[fx:page.x/256]" +repage +adjoin "' + zoomedPath + '/' + zoomedPageName + '_%[filename:tile].png"', function (error, stdout, stderr) {
+		if (error) {
+			console.log(error);
+		}
+		else {
+			console.log('page ' + zoomedPageName + ' tiled');
+		}
+	});
+
+	// gm(zoomedFile)
+	// 	.options({imageMagick: true})
+	// 	.size(function(err, size) {
+	// 		if (err) throw err
+
+	// 		var tileSize = 256
+	// 		var rows = Math.ceil(size.height / tileSize)
+	// 		var cols = Math.ceil(size.width / tileSize)
+	// 		var px = 0, py = 0
+	// 		for(var i = 0; i < rows; i++){
+	// 			for(var j = 0; j < cols; j++){
+	// 				gm(zoomedFile)
+	// 					.options({imageMagick: true})
+	// 					.crop(tileSize, tileSize, px, py)
+	// 					.write(zoomedPath + '/' + zoomedPageName + '_' + i + '_' + j + '.png', function(err){
+	// 						if (err) throw err
+	// 					})
+	// 				px += tileSize
+	// 			}
+	// 			px = 0
+	// 			py += tileSize
+	// 		}
+	// 	})
 }
