@@ -1,8 +1,10 @@
 var bramqp = require('bramqp'),
-		net = require('net'),
-		async = require('async'),
-		config = require('./config.js'),
-		socket = net.connect(config.connection)
+	net = require('net'),
+	async = require('async'),
+	config = require('./config.js'),
+	socket = net.connect(config.connection),
+	logger = require('../logger.js'),
+	logSource = { source: 'client' }
 
 module.exports = new function(){
 	var handle
@@ -11,7 +13,7 @@ module.exports = new function(){
 		bramqp.initialize(socket, 'rabbitmq/full/amqp0-9-1.stripped.extended', function(error, _handle) {
 			handle = _handle
 			handle.on('error', function(error){
-        console.log("caught handle error");
+				logger.error('caught handle error', logSource)
         throw(error);
 	    });
 			async.series([
@@ -21,10 +23,10 @@ module.exports = new function(){
 				function(seriesCallback) {
             handle.queue.declare(1, config.queue.render, false, true, false, false, false, {});
             handle.once('queue.declare-ok', function(channel, method, data) {
-            	console.log('Queue declared')
+            	logger.info('Queue['+config.queue.render+'] declared', logSource)
             });
         },function(seriesCallback){
-        	console.log('connected')
+        	logger.info('Connected['+config.queue.render+']', logSource)
         }	
 			])
 		})
@@ -42,7 +44,7 @@ module.exports = new function(){
 					}, JSON.stringify(task), seriesCallback)
 				})
 			}, function(seriesCallback){
-				console.log('Task['+task.type+'] queued properly')
+				logger.info('Task['+task.type+'] queued properly', logSource)
 			}
 		])
 	}
@@ -53,7 +55,7 @@ module.exports = new function(){
 			functions.push(this.generatePublishFunction(tasks[i]))
 		}
 		functions.push(function(seriesCallback){
-				console.log('Tasks['+tasks.length+'] queued properly')
+				logger.info('Tasks['+tasks.length+'] queued properly', logSource)
 		})
 
 		async.series(functions)

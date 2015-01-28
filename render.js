@@ -3,7 +3,9 @@ var	Canvas = require('canvas'),
 	PDFJS = require('./lib/pdf.js'),
 	PDFReader = require('./lib/reader.js').PDFReader,
 	queueClient = require('./queue/client.js'),
-	gs = require("ghostscript")
+	gs = require("ghostscript"),
+	logger = require('./logger.js'),
+	logSource = { source: 'render' }
 
 exports.render = function(mode, path, file, sendAck){
 	if(mode=='pdf'){
@@ -11,7 +13,7 @@ exports.render = function(mode, path, file, sendAck){
 	}else if(mode=='gs'){
 		renderGS(path, file, sendAck)
 	}else{
-		console.log('undefined mode')
+		logger.warn('undefined mode', logSource)
 		sendAck()
 	}
 }
@@ -31,7 +33,7 @@ function renderPDF(path, file, sendAck){
 				return p + '/page' + pageNum + '.png'
 			}
 			}, function(pageNum){
-				console.log('Finished rendering page ' + pageNum)
+				logger.info('Finished rendering page ' + pageNum, logSource)
 				var p = getPagePictureFolderPath(path, pageNum)
 				var fullPath = p + '/page' + pageNum + '.png'
 				queueClient.queueResizes([{type:'resize', path: p, original: fullPath, zoom:100}, 
@@ -48,7 +50,8 @@ function renderPDF(path, file, sendAck){
 
 function errorCallback(err) {
 	if (err) {
-		console.log('something went wrong :/')
+		logger.error('something went wrong :/', logSource)
+		logger.error(err, logSource)
 		throw err
 	}
 }
@@ -71,10 +74,10 @@ function renderGS(path, file, sendAck){
 		.output(path+'/page_%d.png')
 		.exec(function(err, stdout, stderr) {
 			if (err) {
-				console.log(err)
+				logger.error(err, logSource)
 			}
 			else {
-				console.log(stdout)
+				logger.info(stdout, logSource)
 
 				var pageNames = fs.readdirSync(path).filter(function(file) {
 					return (file.indexOf('.png') != -1)
