@@ -2,7 +2,8 @@ var express = require('express'),
 	multer  = require('multer'),
 	fs = require('fs'),
 	gm = require('gm'),
-	queueClient = require('./queue/client.js')
+	queueClient = require('./queue/client.js'), 
+	logger = require('./logger.js')
 
 var app = express()
 
@@ -13,17 +14,17 @@ app.use(
 			return Date.now()
 		},
 		onFileUploadStart: function (file) {
-			console.log(file.originalname + ' is starting ...')
+			logger.info('Uploading ' + file.originalname + ' ...')
 		},
 		onFileUploadComplete: function (file) {
-			console.log(file.fieldname + ' uploaded to  ' + file.path)
+			logger.info(file.fieldname + ' uploaded to  ' + file.path)
 		}}
 ))
 
 var server = app.listen(3000, function () {
   var host = server.address().address
   var port = server.address().port
-  console.log('Example app listening at http://%s:%s', host, port)
+  logger.info('Example app listening at http://%s:%s', host, port)
 })
 
 app.get('/', function (req, res) {
@@ -39,12 +40,14 @@ app.get('/files', function(req, res){
 //Get pdf
 app.get('/files/:id?', function(req, res){
 	var filename = req.params.id
-	var path = __dirname+'/uploads/'+filename
+	var path = __dirname+'/uploads/'+filename + '/' + filename + '.pdf'
 	fs.exists(path, function(exists){
 		if(exists){
-			res.sendFile(path+'/'+filename+'.pdf')
+			res.sendFile(path)
 		}else{
-			res.send('file['+filename+'] doesnt exists')
+			var err = 'file['+path+'] doesnt exists'
+			logger.error(err)
+			res.send(err)
 		}
 	})
 })
@@ -58,12 +61,14 @@ app.get('/files/:id/pages', function(req, res){
 			var files = fs.readdirSync(path)
 			res.status(200).send({numPages:files.length-1})
 		}else{
-			res.send('file['+filename+'] doesnt exists')
+			var err = 'file['+filename+'] doesnt exists'
+			logger.error(err)
+			res.send(err)
 		}
 	})
 })
 
-//Get page picture file
+//Get tile
 app.get('/files/:id/:page?', function(req, res){
 	var filename = req.params.id,
 		page = req.params.page,
@@ -71,12 +76,16 @@ app.get('/files/:id/:page?', function(req, res){
 		row = req.query.row || 0,
 		col = req.query.col || 0
 
+	logger.info('Get tile file['+filename+'], page['+page+'], zoom['+zoom+'], row['+row+'], col['+col+']')
+
 	var path =  __dirname+'/uploads/'+filename+'/page_'+page+'/'+'zoom_'+zoom+'/tile_'+row+'_'+col+'.png'
 	fs.exists(path, function(exists){
 		if(exists){
 			res.sendFile(path)
 		}else{
-			res.send('file['+filename+'] doesnt exists')
+			var err = 'file['+path+'] doesnt exists'
+			logger.error(err)
+			res.send(err)
 		}
 	})
 })
@@ -87,32 +96,45 @@ app.get('/files/:id/:page/:zoom/info', function(req, res){
 		page = req.params.page,
 		zoom = req.params.zoom
 
-	var path = __dirname + '/uploads/' + file + '/page_' + page + '/page' + page + '_' + zoom + '/page' + page + '_' + zoom + '.png'
+	logger.info('Get zoom info file['+file+'], page['+page+'], zoom['+zoom+']')
+	var err = 'Unable to find file['+file+'], page['+page+'], zoom['+zoom+'] info'
+	var path = __dirname + '/uploads/' + file + '/page_' + page + '/zoom_' + zoom + '/resize.png'
 	fs.exists(path, function(exists){
 		if(exists){
 			gm(path).size(function(err, value){
-				if(err)
-					res.send('Unable to find file['+file+'], page['+page+'], zoom['+zoom+'] info')
-
+				if(err){
+					logger.error(err)
+					res.send(err)
+				}
 				res.send(value)
 			})
 		}else{
-			res.send('Unable to find file['+file+'], page['+page+'], zoom['+zoom+'] info')
+			logger.error(err)
+			res.send(err)
 		}
 	})
 })
 
-app.post('/upload?',function(req,res){
+app.post('/uploadPDF',function(req,res){
+	upload('pdf', req, res)
+});
+
+app.post('/uploadGS',function(req,res){
+	upload('gs', req, res)
+});
+
+
+function upload(mode, req, res){
 	var filename = req.files.file.name,
 		path = req.files.file.path,
 		dest = __dirname + '/uploads/' + filename.substring(0, filename.indexOf('.pdf')),
-		moved = dest+'/'+filename,
-		mode = req.params.mode || 'pdf'
+		moved = dest+'/'+filename
 
 	fs.mkdirSync(dest)
 	fs.renameSync(path, moved)
 
 	res.send('File uploaded successfully')
 
+	logger.info('Queueing render['+mode+'] file['+filename+']')
 	queueClient.queue({type: 'render', mode: mode, path:dest, file:filename})
-});
+}

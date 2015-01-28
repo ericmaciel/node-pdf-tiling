@@ -28,6 +28,12 @@ __1.__ Install [node-canvas](https://github.com/Automattic/node-canvas), [choose
 
 __2.__ Install install [GraphicsMagick](http://www.graphicsmagick.org/) or [ImageMagick](http://www.imagemagick.org/)
 
+__3.__ Install [RabbitMQ](http://www.rabbitmq.com/) or point to a RabbitMQ changing the ```queue/config.js``` file 
+
+__4.__ ```npm install``` 
+
+__4.__ Run ```index.jx``` and ```queue/receiver.js```	
+
 ### References
 =============
 [node-canvas](https://github.com/Automattic/node-canvas)
