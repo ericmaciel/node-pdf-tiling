@@ -1,13 +1,8 @@
 var express = require('express'),
-	fs = require('fs'),
 	multer  = require('multer'),
-	Canvas = require('canvas'),
-	PDFJS = require('./lib/pdf.js'),
-	PDFReader = require('./lib/reader.js').PDFReader,
+	fs = require('fs'),
 	gm = require('gm'),
 	queueClient = require('./queue/client.js')
-
-PDFJS.disableWorker = true
 
 var app = express()
 
@@ -60,13 +55,8 @@ app.get('/files/:id/pages', function(req, res){
 	var path = __dirname+'/uploads/'+filename
 	fs.exists(path, function(exists){
 		if(exists){
-			var pdf = new PDFReader(path+'/'+filename+'.pdf')
-			pdf.on('error', function(err){
-				res.send(err)
-			})
-			pdf.on('ready', function(pdf){
-				res.send({numPages:pdf.pdf.pdfInfo.numPages})
-			})
+			var files = fs.readdirSync(path)
+			res.status(200).send({numPages:files.length-1})
 		}else{
 			res.send('file['+filename+'] doesnt exists')
 		}
@@ -97,7 +87,7 @@ app.get('/files/:id/:page/:zoom/info', function(req, res){
 		page = req.params.page,
 		zoom = req.params.zoom
 
-	var path = __dirname + '/uploads/' + file + '/page_' + page + '/zoom_' + zoom + '/resize.png'
+	var path = __dirname + '/uploads/' + file + '/page_' + page + '/page' + page + '_' + zoom + '/page' + page + '_' + zoom + '.png'
 	fs.exists(path, function(exists){
 		if(exists){
 			gm(path).size(function(err, value){
@@ -112,16 +102,17 @@ app.get('/files/:id/:page/:zoom/info', function(req, res){
 	})
 })
 
-app.post('/upload',function(req,res){
+app.post('/upload?',function(req,res){
 	var filename = req.files.file.name,
 		path = req.files.file.path,
 		dest = __dirname + '/uploads/' + filename.substring(0, filename.indexOf('.pdf')),
-		moved = dest+'/'+filename
+		moved = dest+'/'+filename,
+		mode = req.params.mode || 'pdf'
 
 	fs.mkdirSync(dest)
 	fs.renameSync(path, moved)
 
 	res.send('File uploaded successfully')
 
-	queueClient.queue({type: 'render', path:dest, file:filename})
+	queueClient.queue({type: 'render', mode: mode, path:dest, file:filename})
 });

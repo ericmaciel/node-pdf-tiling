@@ -23,6 +23,8 @@ module.exports = new function(){
             handle.once('queue.declare-ok', function(channel, method, data) {
             	console.log('Queue declared')
             });
+        },function(seriesCallback){
+        	console.log('connected')
         }	
 			])
 		})

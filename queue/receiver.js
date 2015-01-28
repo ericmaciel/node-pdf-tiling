@@ -36,26 +36,23 @@ bramqp.initialize(socket, 'rabbitmq/full/amqp0-9-1.stripped.extended', function(
           handle.once('content', function(channel, className, properties, content) {
           	var task = JSON.parse(content.toString())
 	        	console.log('Incomming message ' + task.type)
+          	
           	if(task.type=='render'){
-	          	render.render(task.path, task.file, function(){
-	          		console.log('ACKing-RENDER')
-	          		handle.basic.ack(1, data['delivery-tag'])
-	          	})	
+	          	render.render(task.mode, task.path, task.file, generateAckFunction('RENDER', data))	
           	}else if(task.type=='resize'){
-          		imageUtils.resize(task.path, task.original, task.zoom, function(){
-          			console.log('ACKing-RESIZE')
-	          		handle.basic.ack(1, data['delivery-tag'])
-          		})
+          		imageUtils.resize(task.path, task.original, task.zoom, generateAckFunction('RESIZE', data))
           	}else if(task.type=='crop'){
-        			imageUtils.crop(task.path, task.resized, function(){
-        				console.log('ACKing-CROP')
-	          		handle.basic.ack(1, data['delivery-tag'])
-        			})
+        			imageUtils.crop(task.path, task.resized, generateAckFunction('CROP', data))
+          	}else if(task.type=='move'){
+          		imageUtils.movePictures(task.dest, task.pageNames, generateAckFunction('MOVE', data))
+          	}else if(task.type=='resizeGS'){
+          		imageUtils.rezieGS(task.pageDir, task.pageFile, task.pageName, task.zoom, generateAckFunction('RESIZE', data))
+          	}else if(task.type=='cropGS'){
+          		imageUtils.cropGS(task.zoomedPath, task.zoomedFile, task.zoomedPageName, generateAckFunction('CROP', data))
           	}else{
           		console.log('Error unkown type['+task.type+']')
           		handle.basic.ack(1, data['delivery-tag'])
           	}
-
         	})
       	})
       	seriesCallback()
@@ -65,3 +62,10 @@ bramqp.initialize(socket, 'rabbitmq/full/amqp0-9-1.stripped.extended', function(
 		console.log('All done')
 	})
 })
+
+function generateAckFunction(info, data){
+	return function(){
+		console.log('ACKing-'+info)
+		handle.basic.ack(1, data['delivery-tag'])
+	}
+}

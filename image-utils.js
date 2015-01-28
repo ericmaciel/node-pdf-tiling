@@ -6,12 +6,6 @@ exports.resize = function(path, original, zoom, sendAck){
 	var folder = path + '/zoom_' + zoom,
 			resized = folder + '/resize.png'
 
-	console.log(path)
-	console.log(original)
-	console.log(zoom)
-	console.log(folder)
-	console.log(resized)
-
 	fs.mkdirSync(folder)
 	gm(original).resize(zoom, zoom, '%').write(resized, function(err){
 		if(err){
@@ -46,4 +40,64 @@ exports.crop = function(path, resized, sendAck){
 		console.log('Crop-finished')
 		sendAck()
 	})
+}
+
+exports.movePictures = function(baseDir, pageNames,sendAck){
+	var zoomLevels = [1, 2, 4, 8]
+	var tasks = []
+	for(var j=0;j<pageNames.length;j++){
+		var pageName = pageNames[j]
+		var path = baseDir + '/' + pageName,
+			pageFile = path + '/' + pageName + '.png'
+		fs.mkdirSync(path)
+		fs.renameSync(path + '.png', pageFile)
+		for (var i = 0; i < zoomLevels.length; i++) {
+			tasks.push({type:'resizeGS', pageDir: path,pageFile: pageFile, pageName: pageName, zoom: zoomLevels[i]})
+		}
+	}
+	queueClient.queueResizes(tasks)
+	sendAck()
+}
+
+exports.rezieGS = function(pageDir, pageFile, pageName, zoomLevel, sendAck){
+	var percent = 100/zoomLevel,
+		zoomedPageName = 'zoom_' + (percent * 10),
+		zoomedPath = pageDir + '/' + zoomedPageName,
+		zoomedFile = zoomedPath + '/' + zoomedPageName + '.png'
+	fs.mkdirSync(zoomedPath)
+	gm(pageFile)
+		.options({imageMagick: true})
+		.resize(percent, percent, '%')
+		.write(zoomedFile, function(err) {
+			if (err) throw err
+			queueClient.queue({type:'cropGS', zoomedPath:zoomedPath, zoomedFile:zoomedFile, zoomedPageName:zoomedPageName})
+			sendAck()
+		})
+}
+
+exports.cropGS = function (zoomedPath, zoomedFile, zoomedPageName, sendAck) {
+	gm(zoomedFile)
+		.options({imageMagick: true})
+		.size(function(err, size) {
+			if (err) throw err
+
+			var tileSize = 256
+			var rows = Math.ceil(size.height / tileSize)
+			var cols = Math.ceil(size.width / tileSize)
+			var px = 0, py = 0
+			for(var i = 0; i < rows; i++){
+				for(var j = 0; j < cols; j++){
+					gm(zoomedFile)
+						.options({imageMagick: true})
+						.crop(tileSize, tileSize, px, py)
+						.write(zoomedPath + '/tile_' + i + '_' + j + '.png', function(err){
+							if (err) throw err
+						})
+					px += tileSize
+				}
+				px = 0
+				py += tileSize
+			}
+			sendAck()
+		})
 }
