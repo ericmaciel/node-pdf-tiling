@@ -1,7 +1,7 @@
 module.exports = {
 	connection: {
-	  //host: 'localhost',
-	  host: '172.30.0.107',
+	  host: 'localhost',
+	  //host: '172.30.0.107',
 	  port: 5672
 	},
 	creds: {

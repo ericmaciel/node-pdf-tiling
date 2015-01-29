@@ -1,27 +1,16 @@
-<h1>Upload rendering using PDF</h1>
-<form id        =  "uploadForm"
-     enctype   =  "multipart/form-data"
-     action    =  "/uploadPDF"
-     method    =  "post"
->
-<input type="file" name="file" accept=".pdf"/>
-<input type="submit" value="Upload file" name="submit">
-</form>
+<h1>Upload PDF</h1>
+<a>The PDF uploaded will be:
+	<ul>
+	  <li>Rendered using Ghostscript</li>
+	  <li>Each page will be rendered into a .pnd file</li>
+	  <li>Each page will be resized into 4 levels of zoom</li>
+	  <li>Each resized page will be break into tiles of 256x256</li>
+	</ul>
+</a>
 
-<h1>Upload rendering using Ghostscript</h1>
 <form id        =  "uploadForm"
      enctype   =  "multipart/form-data"
-     action    =  "/uploadGS"
-     method    =  "post"
->
-<input type="file" name="file" accept=".pdf"/>
-<input type="submit" value="Upload file" name="submit">
-</form>
-
-<h1>Upload rendering using Ghostscript Command Line</h1>
-<form id        =  "uploadForm"
-     enctype   =  "multipart/form-data"
-     action    =  "/uploadGSCommandLine"
+     action    =  "/upload"
      method    =  "post"
 >
 <input type="file" name="file" accept=".pdf"/>

@@ -115,20 +115,7 @@ app.get('/files/:id/:page/:zoom/info', function(req, res){
 	})
 })
 
-app.post('/uploadPDF',function(req,res){
-	upload('pdf', req, res)
-});
-
-app.post('/uploadGS',function(req,res){
-	upload('gs', req, res)
-});
-
-app.post('/uploadGSCommandLine',function(req,res){
-	upload('gs-cl', req, res)
-});
-
-
-function upload(mode, req, res){
+app.post('/upload', function(req,res){
 	var filename = req.files.file.name,
 		path = req.files.file.path,
 		dest = __dirname + '/uploads/' + filename.substring(0, filename.indexOf('.pdf')),
@@ -139,6 +126,6 @@ function upload(mode, req, res){
 
 	res.send('File uploaded successfully')
 
-	logger.info('Queueing render['+mode+'] file['+filename+']')
-	queueClient.queue({type: 'render', mode: mode, path:dest, file:filename})
-}
+	logger.info('Queueing render file['+filename+']')
+	queueClient.queue({type: 'render', path:dest, file:filename})
+})

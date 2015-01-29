@@ -28,5 +28,3 @@ node_modules
 .lock-wscript
 
 uploads/
-temp/*
-queue/temp/*

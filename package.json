@@ -22,9 +22,7 @@
     "url": "https://github.com/ericmaciel/node-pdf-tiling/issues"
   },
   "dependencies": {
-    "canvas": "~1.1.6",
     "express": "~4.11.1",
-    "ghostscript": "https://github.com/ericmaciel/node-ghostscript/tarball/master",
     "gm": "~1.17.0",
     "multer": "~0.1.7",
     "temporal": "^0.4.0",
