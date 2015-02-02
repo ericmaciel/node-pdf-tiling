@@ -38,8 +38,10 @@ bramqp.initialize(socket, 'rabbitmq/full/amqp0-9-1.stripped.extended', function(
           	var task = JSON.parse(content.toString())
 	        	logger.info('Incomming message ' + task.type, logSource)
           	
-          	if(task.type=='render'){
-	          	render.render(task.path, task.file, generateAckFunction('RENDER', data))	
+            if(task.type=='process') {
+              render.process(task.path, task.file, generateAckFunction('PROCESS', data))
+            }else if(task.type=='render'){
+	          	render.render(task.path, task.file, task.page, generateAckFunction('RENDER', data))	
           	}else if(task.type=='move'){
           		imageUtils.movePageFiles(task.dest, task.pageNames, generateAckFunction('MOVE', data))
           	}else if(task.type=='resize'){

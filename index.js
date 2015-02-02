@@ -126,6 +126,6 @@ app.post('/upload', function(req,res){
 
 	res.send('File uploaded successfully')
 
-	logger.info('Queueing render file['+filename+']')
-	queueClient.queue({type: 'render', path:dest, file:filename})
+	logger.info('Queueing process file['+filename+']')
+	queueClient.queue({type: 'process', path:dest, file:filename})
 })
