@@ -12,14 +12,16 @@ exports.movePageFiles = function(dir, pageNames,sendAck){
 		var pageName = pageNames[j]
 		var path = dir + '/' + pageName,
 			pageFile = path + '/' + pageName + pictureExtension
-		fs.mkdirSync(path)
+		if (!fs.existsSync(path)) {
+			fs.mkdirSync(path)
+		}
 		fs.renameSync(path + pictureExtension, pageFile)
 		for (var i = 0; i < zoomLevels.length; i++) {
 			tasks.push({type:'resize', dir: path, pageName: pageName, zoom: zoomLevels[i]})
 		}
 	}
 	logger.info('Successfully moved picutres['+pageNames.length+']', logSource)
-	queueClient.queueResizes(tasks)
+	queueClient.queueTasks(tasks)
 	sendAck()
 }
 
@@ -28,7 +30,9 @@ exports.resize = function(dir, pageName, zoom, sendAck){
 		outPath = dir + '/zoom_' + zoom,
 		output = outPath + '/resize.png'
 
-	fs.mkdirSync(outPath)
+	if (!fs.existsSync(outPath)) {
+		fs.mkdirSync(outPath)
+	}
 
 	var command = 'convert ' + input + ' -resize ' + zoom + '% ' + output
 	logger.info('RESIZE: '+ command, logSource)

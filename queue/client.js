@@ -49,7 +49,7 @@ module.exports = new function(){
 		])
 	}
 
-	this.queueResizes = function(tasks){
+	this.queueTasks = function(tasks){
 		var functions = []
 		for(var i=0;i<tasks.length;i++){
 			functions.push(this.generatePublishFunction(tasks[i]))

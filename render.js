@@ -5,7 +5,7 @@ var	fs = require('fs'),
 	exec = require('child_process').exec
 
 exports.process = function(path, file, sendAck) {
-	var command = 'identify -quiet -format "{\\"pageNum\\":%[page],\\"bounds\\":[%[width],%[height]]}," ' + path + '/' + file
+	var command = 'identify -quiet -format "{\\"pageNum\\":%s,\\"bounds\\":[%W,%H]}," ' + path + '/' + file
 	logger.info(command, logSource)
 	exec(command, function(error, stdout, strerr) {
 		if(error) {
@@ -15,12 +15,15 @@ exports.process = function(path, file, sendAck) {
 		}else{
 			logger.info('Finished processing file['+file+']')
 
-			var pages = JSON.parse('['+stdout.slice(0, -1)+']')
 			var tasks = []
+			var pages = JSON.parse('['+stdout.slice(0, -1)+']').map(function(page) {
+				page.pageNum+=1
+				return page
+			})
 			for (var i=0; i<pages.length; i++) {
 				tasks.push({type:'render', path:path, file:file, page:pages[i]})
 			}
-			queueClient.queueResizes(tasks)
+			queueClient.queueTasks(tasks)
 		}
 		sendAck()
 	})

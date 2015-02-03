@@ -2,7 +2,8 @@ var express = require('express'),
 	multer  = require('multer'),
 	fs = require('fs'),
 	gm = require('gm'),
-	queueClient = require('./queue/client.js'), 
+	queueClient = require('./queue/client.js'),
+	exec = require('child_process').exec,
 	logger = require('./logger.js')
 
 var app = express()
@@ -33,7 +34,9 @@ app.get('/', function (req, res) {
 
 //Get all filenames available
 app.get('/files', function(req, res){
-	var files = fs.readdirSync(__dirname + '/uploads/')
+	var files = fs.readdirSync(__dirname + '/uploads/').filter(function(file) {
+		return /^\d+$/.test(file);
+	})
 	res.status(200).send(files)
 })
 
@@ -58,7 +61,9 @@ app.get('/files/:id/pages', function(req, res){
 	var path = __dirname+'/uploads/'+filename
 	fs.exists(path, function(exists){
 		if(exists){
-			var files = fs.readdirSync(path)
+			var files = fs.readdirSync(path).filter(function(file) {
+				return file.indexOf('page_') == -1;
+			})
 			res.status(200).send({numPages:files.length-1})
 		}else{
 			var err = 'file['+filename+'] doesnt exists'
@@ -124,7 +129,16 @@ app.post('/upload', function(req,res){
 	fs.mkdirSync(dest)
 	fs.renameSync(path, moved)
 
-	res.send('File uploaded successfully')
+	var command = 'gs -q -dNODISPLAY -c "('+moved+') (r) file runpdfbegin pdfpagecount = quit"'
+	exec(command, function(error, stdout, strerr) {
+		if(error) {
+			res.send('File uploaded successfully - error counting pages')
+		}else{
+			var numPages = parseInt(stdout)
+			var numSteps = numPages*10 + 1
+			res.send('File uploaded successfully - '+numPages+' page(s) - '+numSteps+' steps required')
+		}
+	})
 
 	logger.info('Queueing process file['+filename+']')
 	queueClient.queue({type: 'process', path:dest, file:filename})
