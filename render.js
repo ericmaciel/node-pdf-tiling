@@ -21,7 +21,7 @@ exports.process = function(id, path, file, sendAck) {
 			PDF.decrementStep(mongoose.Types.ObjectId(id))
 
 			var tasks = []
-			var pages = JSON.parse('['+stdout.slice(0, -2)+']').map(function(page) {
+			var pages = JSON.parse('['+stdout.trim().slice(0, -1)+']').map(function(page) {
 				page.pageNum+=1
 				return page
 			})
