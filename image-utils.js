@@ -1,11 +1,14 @@
+require('./mongoose.js')
 var fs = require('fs'),
 	queueClient = require('./queue/client.js'),
 	logger = require('./logger.js'),
 	logSource = { source: 'image-utils' },
 	exec = require('child_process').exec,
-	pictureExtension = '.png'
+	pictureExtension = '.png',
+	mongoose = require('mongoose'),
+	PDF = mongoose.model('Pdf')
 
-exports.movePageFiles = function(dir, pageNames,sendAck){
+exports.movePageFiles = function(id, dir, pageNames,sendAck){
 	var zoomLevels = [100, 50, 25, 12.5]
 	var tasks = []
 	for(var j=0;j<pageNames.length;j++){
@@ -17,15 +20,17 @@ exports.movePageFiles = function(dir, pageNames,sendAck){
 		}
 		fs.renameSync(path + pictureExtension, pageFile)
 		for (var i = 0; i < zoomLevels.length; i++) {
-			tasks.push({type:'resize', dir: path, pageName: pageName, zoom: zoomLevels[i]})
+			tasks.push({type:'resize', id:id, dir: path, pageName: pageName, zoom: zoomLevels[i]})
 		}
 	}
+	PDF.decrementStep(mongoose.Types.ObjectId(id))
+
 	logger.info('Successfully moved picutres['+pageNames.length+']', logSource)
 	queueClient.queueTasks(tasks)
 	sendAck()
 }
 
-exports.resize = function(dir, pageName, zoom, sendAck){
+exports.resize = function(id, dir, pageName, zoom, sendAck){
 	var input = dir + '/' + pageName + pictureExtension,
 		outPath = dir + '/zoom_' + zoom,
 		output = outPath + '/resize.png'
@@ -43,13 +48,14 @@ exports.resize = function(dir, pageName, zoom, sendAck){
 				throw err
 			}else{
 				logger.info('RESIZE-finished ['+input+']')
-				queueClient.queue({type:'crop', dir:outPath, resized:output})
+				PDF.decrementStep(mongoose.Types.ObjectId(id))
+				queueClient.queue({type:'crop', id:id, dir:outPath, resized:output})
 			}
 			sendAck()
 	})
 }
 
-exports.crop = function (dir, resized, sendAck) {
+exports.crop = function (id, dir, resized, sendAck) {
 	var command = 'convert ' + resized + ' -crop 256x256 -set filename:tile "%[fx:page.y/256]_%[fx:page.x/256]" +repage +adjoin "' + dir + '/tile_%[filename:tile].png"'
 	logger.info('CROP:'+ command, logSource)
 	exec(command, function(err, stdout, stderr){
@@ -58,6 +64,7 @@ exports.crop = function (dir, resized, sendAck) {
 			logger.error(err, logSource)
 			throw err
 		}else{
+			PDF.decrementStep(mongoose.Types.ObjectId(id))
 			logger.info('CROP-finished ['+resized+']', logSource)
 		}
 		sendAck()

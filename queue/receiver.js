@@ -39,15 +39,15 @@ bramqp.initialize(socket, 'rabbitmq/full/amqp0-9-1.stripped.extended', function(
 	        	logger.info('Incomming message ' + task.type, logSource)
           	
             if(task.type=='process') {
-              render.process(task.path, task.file, generateAckFunction('PROCESS', data))
+              render.process(task.id, task.path, task.file, generateAckFunction('PROCESS', data))
             }else if(task.type=='render'){
-	          	render.render(task.path, task.file, task.page, generateAckFunction('RENDER', data))	
+	          	render.render(task.id, task.path, task.file, task.page, generateAckFunction('RENDER', data))	
           	}else if(task.type=='move'){
-          		imageUtils.movePageFiles(task.dest, task.pageNames, generateAckFunction('MOVE', data))
+          		imageUtils.movePageFiles(task.id, task.dest, task.pageNames, generateAckFunction('MOVE', data))
           	}else if(task.type=='resize'){
-          		imageUtils.resize(task.dir, task.pageName, task.zoom, generateAckFunction('RESIZE', data))
+          		imageUtils.resize(task.id, task.dir, task.pageName, task.zoom, generateAckFunction('RESIZE', data))
           	}else if(task.type=='crop'){
-        			imageUtils.crop(task.dir, task.resized, generateAckFunction('CROP', data))
+        			imageUtils.crop(task.id, task.dir, task.resized, generateAckFunction('CROP', data))
           	}else{
           		logger.warn('Error unkown type['+task.type+']', logSource)
           		handle.basic.ack(1, data['delivery-tag'])

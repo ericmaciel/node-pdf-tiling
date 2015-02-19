@@ -9,5 +9,8 @@ module.exports = {
 	},
 	queue:{
 		render: 'pdf-tiling-render'
+	},
+	mongo:{
+		db: 'mongodb://localhost/tiling'
 	}
 }

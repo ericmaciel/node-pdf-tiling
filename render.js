@@ -1,10 +1,14 @@
+require('./mongoose.js')
 var	fs = require('fs'),
 	queueClient = require('./queue/client.js'),
 	logger = require('./logger.js'),
 	logSource = { source: 'render' },
-	exec = require('child_process').exec
+	exec = require('child_process').exec,
+	mongoose = require('mongoose'),
+	PDF = mongoose.model('Pdf')
+	
 
-exports.process = function(path, file, sendAck) {
+exports.process = function(id, path, file, sendAck) {
 	var command = 'identify -quiet -format "{\\"pageNum\\":%s,\\"bounds\\":[%W,%H]}," ' + path + '/' + file
 	logger.info(command, logSource)
 	exec(command, function(error, stdout, strerr) {
@@ -13,15 +17,16 @@ exports.process = function(path, file, sendAck) {
 			logger.error(stderr, logSource)
 			throw error
 		}else{
-			logger.info('Finished processing file['+file+']')
+			logger.info('Finished processing file['+file+']', logSource)
+			PDF.decrementStep(mongoose.Types.ObjectId(id))
 
 			var tasks = []
-			var pages = JSON.parse('['+stdout.slice(0, -1)+']').map(function(page) {
+			var pages = JSON.parse('['+stdout.slice(0, -2)+']').map(function(page) {
 				page.pageNum+=1
 				return page
 			})
 			for (var i=0; i<pages.length; i++) {
-				tasks.push({type:'render', path:path, file:file, page:pages[i]})
+				tasks.push({type:'render', id:id, path:path, file:file, page:pages[i]})
 			}
 			queueClient.queueTasks(tasks)
 		}
@@ -29,7 +34,7 @@ exports.process = function(path, file, sendAck) {
 	})
 }
 
-exports.render = function(path, file, page, sendAck){
+exports.render = function(id, path, file, page, sendAck){
 	var cfg = {
     		maxsize: 2592,
     		baseres: 144
@@ -44,14 +49,15 @@ exports.render = function(path, file, page, sendAck){
 			throw error
 		}else{
 			logger.info('Finished rendering file['+file+']')
-
+			PDF.decrementStep(mongoose.Types.ObjectId(id))
+			
 			// var pageNames = fs.readdirSync(path).filter(function(file) {
 			// 		return (file.indexOf('.png') != -1)
 			// 	}).map(function(file) {
 			// 		return file.substring(0, file.lastIndexOf('.png'))
 			// 	})
 			var pageNames = ['page_'+page.pageNum]
-			queueClient.queue({type:'move', dest: path, pageNames:pageNames})
+			queueClient.queue({type:'move', id:id, dest: path, pageNames:pageNames})
 		}
 		sendAck()
 	})

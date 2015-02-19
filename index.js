@@ -4,9 +4,13 @@ var express = require('express'),
 	gm = require('gm'),
 	queueClient = require('./queue/client.js'),
 	exec = require('child_process').exec,
-	logger = require('./logger.js')
+	logger = require('./logger.js'),
+	mongoose = require('mongoose')
 
 var app = express()
+
+require('./mongoose.js')
+var PDF = mongoose.model('Pdf')
 
 app.use(
 		multer({
@@ -129,6 +133,8 @@ app.post('/upload', function(req,res){
 	fs.mkdirSync(dest)
 	fs.renameSync(path, moved)
 
+
+
 	var command = 'gs -q -dNODISPLAY -c "('+moved+') (r) file runpdfbegin pdfpagecount = quit"'
 	exec(command, function(error, stdout, strerr) {
 		if(error) {
@@ -136,10 +142,20 @@ app.post('/upload', function(req,res){
 		}else{
 			var numPages = parseInt(stdout)
 			var numSteps = numPages*10 + 1
-			res.send('File uploaded successfully - '+numPages+' page(s) - '+numSteps+' steps required')
+
+			
+				var file = new PDF({name : filename, folder : dest, pages: numPages, steps:numSteps})
+				file.save(function(err, saved){
+					if(err){
+						logger.error('Error saving file')
+						res.send('Error')
+					}else{
+						logger.info(file._id)
+						logger.info('Queueing process file['+saved._id+']')
+						queueClient.queue({type: 'process', path:dest, file:filename, id:saved._id})
+						res.send('File uploaded successfully - '+numPages+' page(s) - '+numSteps+' steps required')
+					}
+				})
 		}
 	})
-
-	logger.info('Queueing process file['+filename+']')
-	queueClient.queue({type: 'process', path:dest, file:filename})
 })
