@@ -8,7 +8,8 @@ var PdfSchema = new Schema({
 	name: {type: String, required: true},
 	folder: {type:String, required:true},
 	pages: {type: Number,required:true},
-	steps: {type: Number,required:true}
+	steps: {type: Number,required:true},
+	completedAt: Date,
 }, {
   toObject: {},
   toJSON: {
@@ -28,6 +29,9 @@ PdfSchema.statics.decrementStep = function(id){
 			logger.error(err, logSource)
 		}else if(pdf){
 			pdf.steps--
+			if(pdf.steps==0){
+				pdf.completedAt = Date.now()
+			}
 			pdf.save(function(err, saved){
 				if(err){
 					logger.error(err, logSource)
