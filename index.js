@@ -64,19 +64,18 @@ app.get('/files/:id?', function(req, res){
 })
 
 //Get pdf pageNum
-app.get('/files/:id/pages', function(req, res){
-	var filename = req.params.id
-	var path = __dirname+'/uploads/'+filename
-	fs.exists(path, function(exists){
-		if(exists){
-			var files = fs.readdirSync(path).filter(function(file) {
-				return file.indexOf('page_') == -1;
-			})
-			res.status(200).send({numPages:files.length-1})
-		}else{
-			var err = 'file['+filename+'] doesnt exists'
-			logger.error(err)
+app.get('/files/:filename/pages', function(req, res){
+	var filename = req.params.filename
+	if(filename.indexOf('.pdf')==-1){
+		filename = filename + '.pdf'
+	}
+
+	PDF.findByName(filename, function(err, files){
+		if(err){
 			res.send(err)
+		}else{
+			logger.info(files)
+			res.send(files[0].pageInfo)
 		}
 	})
 })

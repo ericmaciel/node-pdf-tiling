@@ -73,6 +73,21 @@ PdfSchema.statics.addZoom = function(id, zoom){
 	})
 }
 
+PdfSchema.statics.findByName = function(name, files){
+	var PDF = this
+	PDF.find({name : name}).exec(files)
+}
+
+/*
+ * Virtual getters and setters
+ */
+ PdfSchema.virtual('pageInfo').get(function(){
+ 	var pageInfo = {}
+ 	pageInfo.filename = this.name
+ 	pageInfo.pages = this.pages
+ 	return pageInfo
+ })
+
 /*
  * Export
  */
