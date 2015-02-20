@@ -3,9 +3,7 @@ var	fs = require('fs'),
 	queueClient = require('./queue/client.js'),
 	logger = require('./logger.js'),
 	logSource = { source: 'render' },
-	exec = require('child_process').exec,
-	mongoose = require('mongoose'),
-	PDF = mongoose.model('Pdf')
+	exec = require('child_process').exec
 	
 
 exports.process = function(id, path, file, sendAck) {
@@ -18,9 +16,8 @@ exports.process = function(id, path, file, sendAck) {
 			throw error
 		}else{
 			logger.info('Finished processing file['+file+']', logSource)
-			PDF.decrementStep(mongoose.Types.ObjectId(id))
 
-			var tasks = []
+			var tasks = [{type:'decrement_step', id: id}]
 			var pages = JSON.parse('['+stdout.trim().slice(0, -1)+']').map(function(page) {
 				page.pageNum+=1
 				return page
@@ -49,15 +46,16 @@ exports.render = function(id, path, file, page, sendAck){
 			throw error
 		}else{
 			logger.info('Finished rendering file['+file+']')
-			PDF.decrementStep(mongoose.Types.ObjectId(id))
-			
 			// var pageNames = fs.readdirSync(path).filter(function(file) {
 			// 		return (file.indexOf('.png') != -1)
 			// 	}).map(function(file) {
 			// 		return file.substring(0, file.lastIndexOf('.png'))
 			// 	})
 			var pageNames = ['page_'+page.pageNum]
-			queueClient.queue({type:'move', id:id, dest: path, pageNames:pageNames})
+			//Queueing decrement
+			queueClient.queueTasks([
+				{type:'decrement_step', id: id},
+				{type:'move', id:id, dest: path, pageNames:pageNames}])
 		}
 		sendAck()
 	})

@@ -6,7 +6,9 @@
 	render = require('../render.js'),
 	imageUtils = require('../image-utils.js'),
 	logger = require('../logger.js'),
-	logSource = { source: 'receiver' }
+	logSource = { source: 'receiver' },
+  mongoose = require('mongoose'),
+  PDF = mongoose.model('Pdf')
 
 var handle
 
@@ -48,7 +50,9 @@ bramqp.initialize(socket, 'rabbitmq/full/amqp0-9-1.stripped.extended', function(
           		imageUtils.resize(task.id, task.dir, task.pageName, task.zoom, generateAckFunction('RESIZE', data))
           	}else if(task.type=='crop'){
         			imageUtils.crop(task.id, task.dir, task.resized, generateAckFunction('CROP', data))
-          	}else{
+          	}else if(task.type=='decrement_step'){ //Taks to decrease steps of pdf object
+              PDF.decrementStep(mongoose.Types.ObjectId(task.id), generateAckFunction('DECREMENT_STEP', data))
+            }else{
           		logger.warn('Error unkown type['+task.type+']', logSource)
           		handle.basic.ack(1, data['delivery-tag'])
           	}

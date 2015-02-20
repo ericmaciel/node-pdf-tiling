@@ -10,7 +10,7 @@ var fs = require('fs'),
 
 exports.movePageFiles = function(id, dir, pageNames,sendAck){
 	var zoomLevels = [100, 50, 25, 12.5]
-	var tasks = []
+	var tasks = [{type:'decrement_step', id: id}]
 	for(var j=0;j<pageNames.length;j++){
 		var pageName = pageNames[j]
 		var path = dir + '/' + pageName,
@@ -23,7 +23,6 @@ exports.movePageFiles = function(id, dir, pageNames,sendAck){
 			tasks.push({type:'resize', id:id, dir: path, pageName: pageName, zoom: zoomLevels[i]})
 		}
 	}
-	PDF.decrementStep(mongoose.Types.ObjectId(id))
 
 	logger.info('Successfully moved picutres['+pageNames.length+']', logSource)
 	queueClient.queueTasks(tasks)
@@ -49,8 +48,9 @@ exports.resize = function(id, dir, pageName, zoom, sendAck){
 			}else{
 				logger.info('RESIZE-finished ['+input+']')
 				PDF.addZoom(mongoose.Types.ObjectId(id), zoom)
-				PDF.decrementStep(mongoose.Types.ObjectId(id))
-				queueClient.queue({type:'crop', id:id, dir:outPath, resized:output})
+				queueClient.queueTasks([
+					{type:'decrement_step', id: id},
+					{type:'crop', id:id, dir:outPath, resized:output}])
 			}
 			sendAck()
 	})
@@ -65,7 +65,7 @@ exports.crop = function (id, dir, resized, sendAck) {
 			logger.error(err, logSource)
 			throw err
 		}else{
-			PDF.decrementStep(mongoose.Types.ObjectId(id))
+			queueClient.queue({type:'decrement_step', id: id})
 			logger.info('CROP-finished ['+resized+']', logSource)
 		}
 		sendAck()

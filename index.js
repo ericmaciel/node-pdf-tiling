@@ -156,6 +156,7 @@ app.post('/upload', function(req,res){
 			res.send('File uploaded successfully - error counting pages')
 		}else{
 			var numPages = parseInt(stdout)
+			//Processing PDF, render, moving, 4 resizes,  e 4 crops = 10 steps for each page
 			var numSteps = numPages*10 + 1
 
 			
