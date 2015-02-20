@@ -31,7 +31,6 @@ PdfSchema.statics.decrementStep = function(id, sendAck){
 			logger.error(err, logSource)
 		}else if(pdf){
 			pdf.steps--
-			logger.info(pdf.steps)
 			if(pdf.steps==0){
 				logger.info('Completed ['+id+']')
 				pdf.completedAt = Date.now()
@@ -40,7 +39,7 @@ PdfSchema.statics.decrementStep = function(id, sendAck){
 				if(err){
 					logger.error(err, logSource)
 				}else{
-					logger.info(saved.steps+'-Decremented step on['+id+']', logSource)
+					logger.info('-Decremented step on['+id+']', logSource)
 				}
 				sendAck()
 			})
