@@ -38,10 +38,14 @@ app.get('/', function (req, res) {
 
 //Get all filenames available
 app.get('/files', function(req, res){
-	var files = fs.readdirSync(__dirname + '/uploads/').filter(function(file) {
-		return /^\d+$/.test(file);
+	PDF.find().exec(function(err, files){
+		if(err){
+			logger.error(err)
+			res.status(200).send([])
+		}else{
+			res.status(200).send(files)
+		}
 	})
-	res.status(200).send(files)
 })
 
 //Get pdf

@@ -48,6 +48,7 @@ exports.resize = function(id, dir, pageName, zoom, sendAck){
 				throw err
 			}else{
 				logger.info('RESIZE-finished ['+input+']')
+				PDF.addZoom(mongoose.Types.ObjectId(id), zoom)
 				PDF.decrementStep(mongoose.Types.ObjectId(id))
 				queueClient.queue({type:'crop', id:id, dir:outPath, resized:output})
 			}
