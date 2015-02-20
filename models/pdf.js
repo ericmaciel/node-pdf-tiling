@@ -6,7 +6,7 @@ var mongoose = require('mongoose')
 	, _ = require('lodash')
 
 var PdfSchema = new Schema({
-	name: {type: String, required: true},
+	filename: {type: String, required: true},
 	folder: {type:String, required:true},
 	pages: {type: Number,required:true},
 	steps: {type: Number,required:true},
@@ -83,11 +83,22 @@ PdfSchema.statics.findByName = function(name, files){
  */
  PdfSchema.virtual('pageInfo').get(function(){
  	var pageInfo = {}
- 	pageInfo.filename = this.name
+ 	pageInfo._id = this._id
+ 	pageInfo.filename = this.filename
  	pageInfo.pages = this.pages
  	return pageInfo
  })
 
+ PdfSchema.virtual('minimal').get(function(){
+ 	var minimal = {}
+ 	minimal._id = this._id
+ 	minimal.filename = this.filename
+ 	minimal.pages = this.pages
+ 	minimal.createdAt = this.createdAt
+ 	minimal.completedAt = this.completedAt
+ 	minimal.zoom = this.zoom
+ 	return minimal
+ })
 /*
  * Export
  */
