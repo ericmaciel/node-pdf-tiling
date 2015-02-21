@@ -6,6 +6,7 @@ var express = require('express'),
 	exec = require('child_process').exec,
 	logger = require('./logger.js'),
 	mongoose = require('mongoose')
+	, execPromise = require('child-process-promise').exec
 
 var app = express()
 
@@ -170,4 +171,22 @@ app.post('/upload', function(req,res){
 				})
 		}
 	})
+})
+
+
+app.get('/test', function(req, res){
+	execPromise('echo bruno')
+	.then(function(result){
+		logger.debug(result)
+		return 'hello'
+	})
+	.then(function(other){
+		logger.debug(other)
+		res.send(other)
+	})
+	.fail(function (err) {
+		logger.error('Error')
+		logger.error(err)
+		res.send(err)
+  })
 })
