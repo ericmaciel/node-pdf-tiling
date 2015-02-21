@@ -43,7 +43,6 @@ app.get('/files', function(req, res){
 			logger.error(err)
 			res.status(200).send([])
 		}else{
-			//TODO minimal
 			res.status(200).send(files.map(function(file){
 				return file.minimal
 			}))
@@ -148,8 +147,6 @@ app.post('/upload', function(req,res){
 	fs.mkdirSync(dest)
 	fs.renameSync(path, moved)
 
-
-
 	var command = 'gs -q -dNODISPLAY -c "('+moved+') (r) file runpdfbegin pdfpagecount = quit"'
 	exec(command, function(error, stdout, strerr) {
 		if(error) {
@@ -159,7 +156,6 @@ app.post('/upload', function(req,res){
 			//Processing PDF, render, moving, 4 resizes,  e 4 crops = 10 steps for each page
 			var numSteps = numPages*10 + 1
 
-			
 				var file = new PDF({filename : filename, folder : dest, pages: numPages, steps:numSteps})
 				file.save(function(err, saved){
 					if(err){

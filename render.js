@@ -5,7 +5,9 @@ var	fs = require('fs'),
 	logSource = { source: 'render' },
 	exec = require('child_process').exec
 	
-
+/*
+ * Check each page of the document and gather it's width and height
+ */ 
 exports.process = function(id, path, file, sendAck) {
 	var command = 'identify -quiet -format "{\\"pageNum\\":%s,\\"bounds\\":[%W,%H]}," ' + path + '/' + file
 	logger.info(command, logSource)
@@ -17,6 +19,7 @@ exports.process = function(id, path, file, sendAck) {
 		}else{
 			logger.info('Finished processing file['+file+']', logSource)
 
+			//TODO add promise to decrement_step and do not use it on MQ
 			var tasks = [{type:'decrement_step', id: id}]
 			var pages = JSON.parse('['+stdout.trim().slice(0, -1)+']').map(function(page) {
 				page.pageNum+=1
@@ -31,6 +34,9 @@ exports.process = function(id, path, file, sendAck) {
 	})
 }
 
+/*
+ * It's going to rende pdf page into png file
+ */
 exports.render = function(id, path, file, page, sendAck){
 	var cfg = {
     		maxsize: 2592,
@@ -46,13 +52,8 @@ exports.render = function(id, path, file, page, sendAck){
 			throw error
 		}else{
 			logger.info('Finished rendering file['+file+']')
-			// var pageNames = fs.readdirSync(path).filter(function(file) {
-			// 		return (file.indexOf('.png') != -1)
-			// 	}).map(function(file) {
-			// 		return file.substring(0, file.lastIndexOf('.png'))
-			// 	})
 			var pageNames = ['page_'+page.pageNum]
-			//Queueing decrement
+			//TODO add promise to decrement_step and do not use it on MQ
 			queueClient.queueTasks([
 				{type:'decrement_step', id: id},
 				{type:'move', id:id, dest: path, pageNames:pageNames}])

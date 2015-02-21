@@ -47,8 +47,10 @@ bramqp.initialize(socket, 'rabbitmq/full/amqp0-9-1.stripped.extended', function(
           	}else if(task.type=='move'){
           		imageUtils.movePageFiles(task.id, task.dest, task.pageNames, generateAckFunction('MOVE', data))
           	}else if(task.type=='resize'){
-          		imageUtils.resize(task.id, task.dir, task.pageName, task.zoom, generateAckFunction('RESIZE', data))
-          	}else if(task.type=='crop'){
+              imageUtils.resize(task.id, task.dir, task.pageName, task.zoom, generateAckFunction('RESIZE', data))
+            }else if(task.type=='resize2'){
+              imageUtils.resizeAndCrop(task.id, task.dir, task.pageName, task.zoom, generateAckFunction('RESIZE', data))
+            }else if(task.type=='crop'){
         			imageUtils.crop(task.id, task.dir, task.resized, generateAckFunction('CROP', data))
           	}else if(task.type=='decrement_step'){ //Taks to decrease steps of pdf object
               PDF.decrementStep(mongoose.Types.ObjectId(task.id), generateAckFunction('DECREMENT_STEP', data))

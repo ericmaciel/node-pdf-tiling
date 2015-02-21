@@ -7,6 +7,7 @@ var fs = require('fs'),
 	pictureExtension = '.png',
 	mongoose = require('mongoose'),
 	PDF = mongoose.model('Pdf')
+	, execPromise = require('child-process-promise').exec
 
 exports.movePageFiles = function(id, dir, pageNames,sendAck){
 	var zoomLevels = [100, 50, 25, 12.5]
@@ -20,7 +21,7 @@ exports.movePageFiles = function(id, dir, pageNames,sendAck){
 		}
 		fs.renameSync(path + pictureExtension, pageFile)
 		for (var i = 0; i < zoomLevels.length; i++) {
-			tasks.push({type:'resize', id:id, dir: path, pageName: pageName, zoom: zoomLevels[i]})
+			tasks.push({type:'resize2', id:id, dir: path, pageName: pageName, zoom: zoomLevels[i]})
 		}
 	}
 
@@ -70,4 +71,38 @@ exports.crop = function (id, dir, resized, sendAck) {
 		}
 		sendAck()
 	})
+}
+
+exports.resizeAndCrop = function(id, dir, pageName, zoom, sendAck){
+	//Resize variables
+	var input = dir + '/' + pageName + pictureExtension,
+		outPath = dir + '/zoom_' + zoom,
+		output = outPath + '/resize.png'
+
+	if (!fs.existsSync(outPath)) {
+		fs.mkdirSync(outPath)
+	}
+
+	var resizeCommand = 'convert ' + input + ' -resize ' + zoom + '% ' + output
+	logger.info('RESIZE: '+ resizeCommand, logSource)
+
+	var cropCommand = 'convert ' + output + ' -crop 256x256 -set filename:tile "%[fx:page.y/256]_%[fx:page.x/256]" +repage +adjoin "' + outPath + '/tile_%[filename:tile].png"'
+
+	execPromise(resizeCommand)
+	.then(function(result){
+		logger.info('RESIZE-finished ['+input+']')
+		PDF.addZoom(mongoose.Types.ObjectId(id), zoom)
+		logger.info('CROP:'+ cropCommand, logSource)
+		return execPromise(cropCommand)
+	})
+	.then(function(){
+		queueClient.queue({type:'decrement_step', id: id})
+		logger.info('CROP-finished ['+output+']', logSource)
+		sendAck()
+	})
+	.fail(function (err) {
+		logger.error('Error resizeAndCrop['+input+']', logSource)
+		logger.error(err, logSource)
+		sendAck()
+  })
 }
