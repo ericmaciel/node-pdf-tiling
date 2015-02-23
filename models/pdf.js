@@ -30,7 +30,6 @@ PdfSchema.statics.decrementStep = function(id){
 	var PDF = this
 	PDF.findById(id).exec(function(err, pdf){
 		if(err){
-			console.log('error')
 			deferred.reject(new Error(err))
 		}else if(pdf){
 			pdf.steps--
