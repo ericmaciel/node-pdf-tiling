@@ -12,5 +12,6 @@ module.exports = {
 	},
 	mongo:{
 		db: 'mongodb://localhost/tiling'
-	}
+	},
+	zoomLevels: [100, 50, 25, 12.5]
 }
