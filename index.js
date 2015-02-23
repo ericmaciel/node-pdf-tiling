@@ -1,12 +1,13 @@
-var express = require('express'),
-	multer  = require('multer'),
-	fs = require('fs'),
-	gm = require('gm'),
-	queueClient = require('./queue/client.js'),
-	exec = require('child_process').exec,
-	logger = require('./logger.js'),
-	mongoose = require('mongoose')
+var express = require('express')
+	, multer  = require('multer')
+	, fs = require('fs')
+	, gm = require('gm')
+	, queueClient = require('./queue/client.js')
+	, exec = require('child_process').exec
+	, logger = require('./logger.js')
+	, mongoose = require('mongoose')
 	, execPromise = require('child-process-promise').exec
+	, zoomLevels = require('./queue/config.js').zoomLevels
 
 var app = express()
 
@@ -154,39 +155,27 @@ app.post('/upload', function(req,res){
 			res.send('File uploaded successfully - error counting pages')
 		}else{
 			var numPages = parseInt(stdout)
-			//Processing PDF, render, moving, 4 resizes,  e 4 crops = 10 steps for each page
-			var numSteps = numPages*10 + 1
+			/*
+			 * 1 - Processing, render and moving rendered pages PDF
+			 * 2 - numPages * zoomLevels.lengh
+			 */
+			var numSteps = 1 + numPages*zoomLevels.length
+			console.log(numPages)
+			console.log(zoomLevels)
 
-				var file = new PDF({filename : filename, folder : dest, pages: numPages, steps:numSteps})
-				file.save(function(err, saved){
-					if(err){
-						logger.error('Error saving file')
-						res.send('Error')
-					}else{
-						logger.info(file._id)
-						logger.info('Queueing process file['+saved._id+']')
-						queueClient.queue({type: 'process', path:dest, file:filename, id:saved._id})
-						res.send('File['+file._id+'] uploaded successfully - '+numPages+' page(s) - '+numSteps+' steps required')
-					}
-				})
+			var file = new PDF({filename : filename, folder : dest, pages: numPages, steps:numSteps})
+			file.save(function(err, saved){
+				if(err){
+					logger.error('Error saving file')
+					logger.error(err)
+					res.send('Error')
+				}else{
+					logger.info(file._id)
+					logger.info('Queueing process file['+saved._id+']')
+					queueClient.queue({type: 'process', path:dest, file:filename, id:saved._id})
+					res.send('File['+file._id+'] uploaded successfully - '+numPages+' page(s) - '+numSteps+' steps required')
+				}
+			})
 		}
 	})
-})
-
-
-app.get('/test', function(req, res){
-	execPromise('echo bruno')
-	.then(function(result){
-		logger.debug(result)
-		return 'hello'
-	})
-	.then(function(other){
-		logger.debug(other)
-		res.send(other)
-	})
-	.fail(function (err) {
-		logger.error('Error')
-		logger.error(err)
-		res.send(err)
-  })
 })

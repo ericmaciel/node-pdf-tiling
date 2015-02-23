@@ -6,6 +6,8 @@ var	fs = require('fs')
 	, execPromise = require('child-process-promise').exec
 	, Q = require('q')
 	, zoomLevels = require('./queue/config.js').zoomLevels
+	, mongoose = require('mongoose')
+	, PDF = mongoose.model('Pdf')
 
 exports.processRenderMove = function(id, path, file, sendAck){
 	var process = 'identify -quiet -format "{\\"pageNum\\":%s,\\"bounds\\":[%W,%H]}," ' + path + '/' + file
@@ -51,6 +53,7 @@ exports.processRenderMove = function(id, path, file, sendAck){
 		}
 		queueClient.queueTasks(tasks)
 		logger.info('DONE-Moving pages of file['+id+']', logSource)
+		return PDF.decrementStep(id)
 	})
 	.fail(function (err) {
 		logger.error('Error processAndRender['+file+']', logSource)

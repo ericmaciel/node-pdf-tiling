@@ -30,9 +30,7 @@ exports.resizeAndCrop = function(id, dir, pageName, zoom, sendAck){
 	})
 	.then(function(){
 		logger.info('DONE-Croping['+id+'] page['+pageName+'] zoom['+zoom+']', logSource)
-		//TODO decrement promise
-		return 
-		queueClient.queue({type:'decrement_step', id: id})
+		return PDF.decrementStep(id)
 	})
 	.fail(function (err) {
 		logger.error('Error resizeAndCrop['+input+']', logSource)
