@@ -4,6 +4,7 @@ var mongoose = require('mongoose')
 	, logger = require('../logger.js')
 	, logSource = { source: 'model' }
 	, _ = require('lodash')
+	, Q = require('q')
 
 var PdfSchema = new Schema({
 	filename: {type: String, required: true},
@@ -24,11 +25,12 @@ PdfSchema.plugin(timestamps)
 /*
  * Class methods
  */
-PdfSchema.statics.decrementStep = function(id, sendAck){
+PdfSchema.statics.decrementStep = function(id){
+	var deferred = Q.defer()
 	var PDF = this
 	PDF.findById(id).exec(function(err, pdf){
 		if(err){
-			logger.error(err, logSource)
+			deferred.reject(new Error(err))
 		}else if(pdf){
 			pdf.steps--
 			if(pdf.steps==0){
@@ -37,14 +39,17 @@ PdfSchema.statics.decrementStep = function(id, sendAck){
 			}
 			pdf.save(function(err, saved){
 				if(err){
-					logger.error(err, logSource)
+					deferred.reject(new Error(err))
 				}else{
 					logger.info('-Decremented step on['+id+']', logSource)
+					deferred.resolve(saved)
 				}
-				sendAck()
 			})
+		}else{
+			deferred.reject('Object not found ' + id)
 		}
 	})
+	return deferred.promise
 }
 
 PdfSchema.statics.addZoom = function(id, zoom){

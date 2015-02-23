@@ -41,17 +41,9 @@ bramqp.initialize(socket, 'rabbitmq/full/amqp0-9-1.stripped.extended', function(
 	        	logger.info('Incomming message ' + task.type, logSource)
           	
             if(task.type=='process') {
-              render.process(task.id, task.path, task.file, generateAckFunction('PROCESS', data))
-            }else if(task.type=='render'){
-	          	render.render(task.id, task.path, task.file, task.page, generateAckFunction('RENDER', data))	
-          	}else if(task.type=='move'){
-          		imageUtils.movePageFiles(task.id, task.dest, task.pageNames, generateAckFunction('MOVE', data))
-          	}else if(task.type=='resize'){
-          		imageUtils.resize(task.id, task.dir, task.pageName, task.zoom, generateAckFunction('RESIZE', data))
-          	}else if(task.type=='crop'){
-        			imageUtils.crop(task.id, task.dir, task.resized, generateAckFunction('CROP', data))
-          	}else if(task.type=='decrement_step'){ //Taks to decrease steps of pdf object
-              PDF.decrementStep(mongoose.Types.ObjectId(task.id), generateAckFunction('DECREMENT_STEP', data))
+              render.processRenderMove(task.id, task.path, task.file, generateAckFunction('PROCESS', data))
+            }else if(task.type=='resizeCrop'){
+              imageUtils.resizeAndCrop(task.id, task.dir, task.pageName, task.zoom, generateAckFunction('RESIZE', data))
             }else{
           		logger.warn('Error unkown type['+task.type+']', logSource)
           		handle.basic.ack(1, data['delivery-tag'])
