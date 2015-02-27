@@ -1,5 +1,6 @@
 var winston = require('winston')
 
+require('winston-loggly')
 
 var logger = new winston.Logger ({
   transports: [

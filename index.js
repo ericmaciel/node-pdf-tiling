@@ -107,6 +107,41 @@ app.get('/files/:id/:page?', function(req, res){
 	})
 })
 
+app.get('/files/:id/:page/thumbnail', function(req, res){
+	var id = req.params.id,
+		page = req.params.page
+
+	PDF.findById(mongoose.Types.ObjectId(id)).exec(function(err, file){
+		if(!err&&file){
+			var path =  __dirname+'/uploads/'+file.filename.substring(0, file.filename.indexOf('.pdf'))+'/page_'+page+'/'
+			var file = 'page_'+page+'.png'
+			var thumbnail = 'thumbnail.png'
+			fs.exists(path+thumbnail, function(exists){
+				if(exists){
+					res.sendFile(path+thumbnail)
+				}else{
+					//Generating thumbnail file
+					var command = 'convert ' + path+file +' -thumbnail 100x100^ -gravity center -extent 100x100 ' + path + thumbnail
+					execPromise(command)
+					.then(function(){
+						res.sendFile(path+file)
+					})
+					.fail(function (err) {
+						var err = 'file['+path+'] doesnt exists'
+						logger.error(err)
+						res.send(err)
+					})
+				}
+			})
+		}else{
+			logger.error(err)
+			res.status(200).send({error: 'File ['+id+'] does not exist'})		
+		}
+
+
+	})
+})
+
 //Get zoom info
 app.get('/files/:id/:page/:zoom/info', function(req, res){
 	var id = req.params.id,
