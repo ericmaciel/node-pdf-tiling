@@ -46,6 +46,8 @@ exports.processRenderMove = function(id, path, file, sendAck){
 					fs.mkdirSync(pageFolder)
 				}
 				fs.renameSync(path + '/' + file, pageFolder + '/' + file)
+				logger.info('thumbnail', {type:'thumbnail', id:id, dir:pageFolder, pageName: file})
+				tasks.push({type:'thumbnail', id:id, dir:pageFolder, pageName: file})
 				for(var j=0;j<zoomLevels.length;j++){
 					tasks.push({type:'resizeCrop', id:id, dir: pageFolder, pageName: file, zoom: zoomLevels[j]})
 				}

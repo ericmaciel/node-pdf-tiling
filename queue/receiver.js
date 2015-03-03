@@ -44,6 +44,8 @@ bramqp.initialize(socket, 'rabbitmq/full/amqp0-9-1.stripped.extended', function(
               render.processRenderMove(task.id, task.path, task.file, generateAckFunction('PROCESS', data))
             }else if(task.type=='resizeCrop'){
               imageUtils.resizeAndCrop(task.id, task.dir, task.pageName, task.zoom, generateAckFunction('RESIZE', data))
+            }else if(task.type=='thumbnail'){
+              imageUtils.thumbnail(task.id, task.dir, task.pageName, generateAckFunction('THUMBNAIL', data))
             }else{
           		logger.warn('Error unkown type['+task.type+']', logSource)
           		handle.basic.ack(1, data['delivery-tag'])

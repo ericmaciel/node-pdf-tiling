@@ -193,8 +193,9 @@ app.post('/upload', function(req,res){
 			/*
 			 * 1 - Processing, render and moving rendered pages PDF
 			 * 2 - numPages * zoomLevels.lengh
+			 * 3 - numPage thumbnails
 			 */
-			var numSteps = 1 + numPages*zoomLevels.length
+			var numSteps = 1 + numPages*zoomLevels.length + numPages
 			console.log(numPages)
 			console.log(zoomLevels)
 
