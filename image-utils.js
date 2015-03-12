@@ -46,7 +46,7 @@ exports.resizeAndCrop = function(id, dir, pageName, zoom, sendAck){
 exports.thumbnail=function(id,dir,filename, ack){
 	var input = dir + '/' + filename
 		, output = dir + '/thumbnail.png'
-		, thumbailCommand = 'convert ' + input +' -thumbnail 100x100^ -gravity center -extent 100x100 ' + output
+		, thumbailCommand = 'convert ' + input +' -resize 256x256 ' + output
 	execPromise(thumbailCommand)
 	.then(function(){
 		return PDF.decrementStep(id)
